@@ -30,14 +30,15 @@ export function VLibrasWidget() {
     };
   }, []);
 
-  const anyDiv = "div" as unknown as React.ElementType;
+  const D = "div" as unknown as React.ElementType;
   return (
-    <anyDiv {...{ vw: "true" }} className="enabled">
-      <anyDiv {...{ "vw-access-button": "true" }} className="active" />
-      <anyDiv {...{ "vw-plugin-wrapper": "true" }}>
+    <D {...{ vw: "true" }} className="enabled">
+      <D {...{ "vw-access-button": "true" }} className="active" />
+      <D {...{ "vw-plugin-wrapper": "true" }}>
         <div className="vw-plugin-top-wrapper" />
-      </anyDiv>
-    </anyDiv>
+      </D>
+    </D>
   );
+
 
 }
