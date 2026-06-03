@@ -80,10 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "LibrasLive AI — Tradução de voz para Libras em tempo real" },
       { name: "description", content: "Converta fala em português para Libras em tempo real com avatar VLibras. Acessibilidade para escolas, hospitais e órgãos públicos." },
       { name: "author", content: "LibrasLive AI" },
-      { property: "og:title", content: "LibrasLive AI — Tradução de voz para Libras" },
-      { property: "og:description", content: "Fale e veja a tradução em Libras instantaneamente com avatar virtual." },
+      { property: "og:title", content: "LibrasLive AI — Tradução de voz para Libras em tempo real" },
+      { property: "og:description", content: "Converta fala em português para Libras em tempo real com avatar VLibras. Acessibilidade para escolas, hospitais e órgãos públicos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "LibrasLive AI — Tradução de voz para Libras em tempo real" },
+      { name: "twitter:description", content: "Converta fala em português para Libras em tempo real com avatar VLibras. Acessibilidade para escolas, hospitais e órgãos públicos." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7bad89da-f0dc-4bbc-823a-61e8e94ac396/id-preview-60f90dd9--e1524291-abab-4cde-839e-5102d91de25f.lovable.app-1780528318987.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7bad89da-f0dc-4bbc-823a-61e8e94ac396/id-preview-60f90dd9--e1524291-abab-4cde-839e-5102d91de25f.lovable.app-1780528318987.png" },
     ],
     links: [
       {
