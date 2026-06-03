@@ -1,44 +1,57 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
     VLibras?: { Widget: new (url: string) => unknown };
+    __vlibrasInited?: boolean;
   }
 }
 
-let initialized = false;
+const MARKUP = `
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+`;
 
 export function VLibrasWidget() {
+  const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const init = () => {
-      if (initialized) return;
+      if (window.__vlibrasInited) return true;
       if (window.VLibras?.Widget) {
         try {
           new window.VLibras.Widget("https://vlibras.gov.br/app");
-          initialized = true;
+          window.__vlibrasInited = true;
+          return true;
         } catch (e) {
           console.warn("VLibras init failed", e);
         }
       }
+      return false;
     };
-    init();
-    const t = window.setInterval(init, 800);
-    const stop = window.setTimeout(() => window.clearInterval(t), 15000);
+
+    // Ensure the script is present (in case head injection was skipped on hot reload)
+    if (!document.querySelector('script[data-vlibras]')) {
+      const s = document.createElement("script");
+      s.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+      s.async = true;
+      s.dataset.vlibras = "1";
+      s.onload = () => init();
+      document.body.appendChild(s);
+    }
+
+    if (init()) return;
+    const t = window.setInterval(() => { if (init()) window.clearInterval(t); }, 600);
+    const stop = window.setTimeout(() => window.clearInterval(t), 20000);
     return () => {
       window.clearInterval(t);
       window.clearTimeout(stop);
     };
   }, []);
 
-  const D = "div" as unknown as React.ElementType;
-  return (
-    <D {...{ vw: "true" }} className="enabled">
-      <D {...{ "vw-access-button": "true" }} className="active" />
-      <D {...{ "vw-plugin-wrapper": "true" }}>
-        <div className="vw-plugin-top-wrapper" />
-      </D>
-    </D>
-  );
-
-
+  return <div ref={ref} dangerouslySetInnerHTML={{ __html: MARKUP }} />;
 }
