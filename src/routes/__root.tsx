@@ -110,6 +110,16 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        <div
+          dangerouslySetInnerHTML={{
+            __html: `<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>`,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){function init(){if(window.__vlibrasInited)return true;if(window.VLibras&&window.VLibras.Widget){try{new window.VLibras.Widget('https://vlibras.gov.br/app');window.__vlibrasInited=true;return true;}catch(e){console.warn('VLibras init error',e);}}return false;}function load(){if(document.querySelector('script[data-vlibras]'))return;var s=document.createElement('script');s.src='https://vlibras.gov.br/app/vlibras-plugin.js';s.async=true;s.setAttribute('data-vlibras','1');s.onload=function(){init();};document.body.appendChild(s);}load();var i=setInterval(function(){if(init())clearInterval(i);},500);setTimeout(function(){clearInterval(i);},20000);})();`,
+          }}
+        />
         <Scripts />
       </body>
     </html>
