@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "LibrasLive AI — Tradução de voz para Libras em tempo real" },
+      { name: "description", content: "Converta fala em português para Libras em tempo real com avatar VLibras. Acessibilidade para escolas, hospitais e órgãos públicos." },
+      { name: "author", content: "LibrasLive AI" },
+      { property: "og:title", content: "LibrasLive AI — Tradução de voz para Libras" },
+      { property: "og:description", content: "Fale e veja a tradução em Libras instantaneamente com avatar virtual." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -92,7 +91,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
     ],
+    scripts: [
+      { src: "https://vlibras.gov.br/app/vlibras-plugin.js", defer: true },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
