@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Mic, MicOff, Copy, Trash2, Moon, Sun, Hand, Sparkles, Volume2, Check } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -88,6 +88,14 @@ function Index() {
           Fale ao microfone e veja a transcrição e o avatar de Libras sinalizando instantaneamente.
           Pensado para escolas, hospitais, universidades e órgãos públicos.
         </p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/conversa"
+            className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110"
+          >
+            <Sparkles className="h-4 w-4" /> Abrir modo conversa (câmera + voz)
+          </Link>
+        </div>
       </section>
 
       {/* MAIN GRID */}
