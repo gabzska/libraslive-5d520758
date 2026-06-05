@@ -10,6 +10,7 @@ import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { translateToVLibras } from "@/lib/vlibras";
 import { speak } from "@/lib/tts";
 import { reconstructSentence } from "@/lib/libras.functions";
+import { AlphabetBanner } from "@/components/AlphabetBanner";
 
 export const Route = createFileRoute("/conversa")({
   head: () => ({
