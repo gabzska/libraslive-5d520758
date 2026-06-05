@@ -206,8 +206,9 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         modelComplexity: 1,
         smoothLandmarks: true,
         refineFaceLandmarks: false,
-        minDetectionConfidence: 0.55,
-        minTrackingConfidence: 0.55,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+        selfieMode: true,
       });
 
       holistic.onResults((res: any) => {
