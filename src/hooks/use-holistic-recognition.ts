@@ -175,8 +175,10 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
   const holisticRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
   const lastEmitRef = useRef<{ gloss: string; at: number }>({ gloss: "", at: 0 });
+  const voteRef = useRef<{ gloss: string; confidence: number }[]>([]); // janela temporal
   const onGlossRef = useRef(onGloss);
   const frameTimesRef = useRef<number[]>([]);
+  const brightSampleRef = useRef<{ at: number; v: number }>({ at: 0, v: 1 });
   onGlossRef.current = onGloss;
 
   const stop = useCallback(() => {
