@@ -113,7 +113,7 @@ function Conversa() {
   const voice = useSpeechRecognition({
     lang: "pt-BR",
     onFinal: (text) => {
-      setTranscript((t) => [{ id: crypto.randomUUID(), from: "voice", text, at: Date.now() }, ...t].slice(0, 60));
+      setTranscript((t) => [{ id: crypto.randomUUID(), from: "voice" as const, text, at: Date.now() }, ...t].slice(0, 60));
       translateToVLibras(text);
     },
   });
