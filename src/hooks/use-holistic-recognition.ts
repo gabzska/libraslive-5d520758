@@ -263,16 +263,43 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         setFps(frameTimesRef.current.length);
 
         if (hands.length) {
-          const r = recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null });
+          // Tenta vocabulário; se nenhum candidato, cai para alfabeto manual
+          const r =
+            recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null }) ??
+            recognizeLetter(hands[0]);
+
           if (r) {
-            const ev: GlossEvent = { ...r, at: Date.now() };
-            setCurrent(ev);
-            if (r.gloss !== lastEmitRef.current.gloss || Date.now() - lastEmitRef.current.at > 1200) {
-              lastEmitRef.current = { gloss: r.gloss, at: Date.now() };
-              onGlossRef.current?.(ev);
+            // Voto temporal: mantém últimos 5 frames, exige maioria para emitir
+            const vote = voteRef.current;
+            vote.push(r);
+            if (vote.length > 5) vote.shift();
+            const counts: Record<string, { n: number; sum: number }> = {};
+            for (const v of vote) {
+              counts[v.gloss] = counts[v.gloss] || { n: 0, sum: 0 };
+              counts[v.gloss].n++; counts[v.gloss].sum += v.confidence;
             }
+            const [best, info] = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
+            const ratio = info.n / vote.length;
+            const avgConf = info.sum / info.n;
+            // confiança final ponderada pela estabilidade temporal
+            const stableConf = Math.min(1, avgConf * (0.6 + 0.4 * ratio));
+            const ev: GlossEvent = { gloss: best, confidence: stableConf, at: Date.now() };
+            setCurrent(ev);
+            // Limiar: precisa de pelo menos 3/5 frames coerentes e confiança ≥ 0.55
+            const fastSign = info.n >= 2 && avgConf >= 0.78; // sinais rápidos com alta confiança
+            const stableSign = info.n >= 3 && stableConf >= 0.55;
+            if (stableSign || fastSign) {
+              const debounce = /^[A-Z]$/.test(best) ? 450 : 700; // letras podem repetir mais rápido
+              if (best !== lastEmitRef.current.gloss || Date.now() - lastEmitRef.current.at > debounce) {
+                lastEmitRef.current = { gloss: best, at: Date.now() };
+                onGlossRef.current?.(ev);
+              }
+            }
+          } else {
+            voteRef.current = [];
           }
         } else {
+          voteRef.current = [];
           setCurrent(null);
         }
         ctx.restore();
