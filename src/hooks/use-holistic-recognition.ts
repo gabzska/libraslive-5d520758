@@ -278,7 +278,9 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
               counts[v.gloss] = counts[v.gloss] || { n: 0, sum: 0 };
               counts[v.gloss].n++; counts[v.gloss].sum += v.confidence;
             }
-            const [best, info] = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
+            const top = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
+            if (!top) { ctx.restore(); return; }
+            const [best, info] = top;
             const ratio = info.n / vote.length;
             const avgConf = info.sum / info.n;
             // confiança final ponderada pela estabilidade temporal
