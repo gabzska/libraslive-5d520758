@@ -162,7 +162,18 @@ function Conversa() {
         </p>
       </section>
 
+      {(() => {
+        const activeLetter =
+          sign.current && /^[A-Z]$/.test(sign.current.gloss) ? sign.current.gloss : null;
+        const spelledWord = buffer
+          .map((g) => g.gloss)
+          .filter((g) => /^[A-Z]$/.test(g))
+          .join("");
+        return <AlphabetBanner activeLetter={activeLetter} spelledWord={spelledWord} />;
+      })()}
+
       <section className="mx-auto grid max-w-7xl gap-5 px-5 pb-10 md:grid-cols-2">
+
         {/* SIGN → TEXT */}
         <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-5 shadow-card backdrop-blur">
           <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
