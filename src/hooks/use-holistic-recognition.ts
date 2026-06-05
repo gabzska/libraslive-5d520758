@@ -220,7 +220,24 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-        if (lowLightBoost) ctx.filter = "brightness(1.15) contrast(1.1) saturate(1.05)";
+        // Boost adaptativo: amostra brilho a cada 500ms; quanto mais escuro, mais forte o filtro
+        if (lowLightBoost) {
+          const now0 = performance.now();
+          if (now0 - brightSampleRef.current.at > 500) {
+            try {
+              const tmp = document.createElement("canvas");
+              tmp.width = 16; tmp.height = 12;
+              tmp.getContext("2d")?.drawImage(res.image, 0, 0, 16, 12);
+              const d = tmp.getContext("2d")!.getImageData(0, 0, 16, 12).data;
+              let s = 0; for (let i = 0; i < d.length; i += 4) s += (d[i] + d[i + 1] + d[i + 2]) / 3;
+              brightSampleRef.current = { at: now0, v: s / (d.length / 4) / 255 };
+            } catch { /* ignore */ }
+          }
+          const v = brightSampleRef.current.v; // 0=escuro 1=claro
+          const b = v < 0.35 ? 1.45 : v < 0.55 ? 1.25 : 1.1;
+          const c0 = v < 0.35 ? 1.35 : v < 0.55 ? 1.2 : 1.08;
+          ctx.filter = `brightness(${b}) contrast(${c0}) saturate(1.05)`;
+        }
         ctx.drawImage(res.image, 0, 0, canvas.width, canvas.height);
         ctx.filter = "none";
 
