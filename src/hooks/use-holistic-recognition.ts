@@ -38,6 +38,66 @@ function fingersExtended(hand: LM[]): boolean[] {
 
 function dist(a: LM, b: LM) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
+/** Reconhecimento heurístico do alfabeto manual (A–Z).
+ *  Cobre prioritariamente letras com configurações estáticas distintas;
+ *  letras dinâmicas (J, Z) são detectadas pela forma de partida + trajetória
+ *  e letras de configuração ambígua (M, N, S, T, E) usam dicas adicionais.
+ */
+function recognizeLetter(hand: LM[]): { gloss: string; confidence: number } | null {
+  const ext = fingersExtended(hand);
+  const [thumb, idx, mid, ring, pinky] = ext;
+  const up = ext.filter(Boolean).length;
+
+  // distâncias auxiliares
+  const dThumbIdx = dist(hand[4], hand[8]);
+  const dThumbMid = dist(hand[4], hand[12]);
+  const palmUp = hand[0].y > hand[9].y;
+
+  // configurações estáticas mais confiáveis primeiro
+  if (idx && mid && ring && pinky && !thumb) return { gloss: "B", confidence: 0.88 };
+  if (idx && mid && ring && !pinky && !thumb) return { gloss: "W", confidence: 0.84 };
+  if (idx && mid && !ring && !pinky && !thumb) return { gloss: "V", confidence: 0.82 };
+  if (idx && mid && !ring && !pinky && thumb) return { gloss: "K", confidence: 0.74 };
+  if (idx && !mid && !ring && !pinky && thumb && dThumbIdx > 0.12) return { gloss: "L", confidence: 0.86 };
+  if (idx && !mid && !ring && !pinky && !thumb) return { gloss: "D", confidence: 0.8 };
+  if (!idx && !mid && !ring && pinky && !thumb) return { gloss: "I", confidence: 0.82 };
+  if (!idx && !mid && !ring && pinky && thumb) return { gloss: "Y", confidence: 0.84 };
+  if (!idx && mid && ring && pinky && thumb && dThumbIdx < 0.07) return { gloss: "F", confidence: 0.78 };
+  if (!idx && !mid && !ring && !pinky) {
+    // A vs S vs E vs T (punho fechado) — usamos posição do polegar
+    if (thumb && hand[4].x < hand[3].x) return { gloss: "A", confidence: 0.74 };
+    if (dThumbMid < 0.05) return { gloss: "T", confidence: 0.6 };
+    return { gloss: "S", confidence: 0.68 };
+  }
+  // C / O — todos dedos curvados formando arco (sem extensão clara, polegar próximo)
+  if (up <= 1 && dThumbIdx < 0.08 && palmUp === false) {
+    return dThumbIdx < 0.05
+      ? { gloss: "O", confidence: 0.7 }
+      : { gloss: "C", confidence: 0.65 };
+  }
+  // R (cruzado) — index+mid próximos lateralmente
+  if (idx && mid && !ring && !pinky && Math.abs(hand[8].x - hand[12].x) < 0.025) {
+    return { gloss: "R", confidence: 0.7 };
+  }
+  // U (index+mid juntos verticais)
+  if (idx && mid && !ring && !pinky && Math.abs(hand[8].x - hand[12].x) < 0.05) {
+    return { gloss: "U", confidence: 0.72 };
+  }
+  // X (gancho) — index parcialmente dobrado: tip mais alto que pip mas abaixo do mcp
+  if (!idx && !mid && !ring && !pinky && hand[8].y < hand[6].y && hand[8].y > hand[5].y - 0.02) {
+    return { gloss: "X", confidence: 0.62 };
+  }
+  return null;
+}
+
+/* ---------------- Vocabulary (heurística expandida) ---------------- */
+interface SignCtx {
+  hands: LM[][];
+  handedness: string[];
+  pose: LM[] | null;
+  face: LM[] | null;
+}
+
 function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   if (!c.hands.length) return null;
   const h = c.hands[0];
@@ -46,8 +106,7 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   const up = ext.filter(Boolean).length;
   const palmUp = h[0].y > h[9].y;
 
-  // Distância da mão ao queixo / testa (uso simples se houver pose)
-  const chin = c.pose?.[10] ?? c.pose?.[0] ?? null; // boca/nariz aproximação
+  const chin = c.pose?.[10] ?? c.pose?.[0] ?? null;
   const handNearMouth = chin ? dist(h[9], chin) < 0.18 : false;
   const handHigh = h[9].y < 0.35;
   const handLow = h[9].y > 0.7;
@@ -61,7 +120,6 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   if (up >= 4 && palmUp && handLow) cands.push({ gloss: "POR-FAVOR", confidence: 0.7 });
 
   // Afirmações / negações
-  if (up <= 1) cands.push({ gloss: "SIM", confidence: 0.82 });
   if (idx && mid && !ring && !pinky && !thumb) cands.push({ gloss: "NÃO", confidence: 0.82 });
   if (thumb && !idx && !mid && !ring && !pinky) cands.push({ gloss: "TUDO-BEM", confidence: 0.83 });
 
@@ -70,13 +128,11 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   if (idx && !mid && !ring && !pinky && !thumb && h[8].z > 0.02) cands.push({ gloss: "VOCÊ", confidence: 0.8 });
   if (c.hands.length > 1 && idx && !mid && !ring && !pinky) cands.push({ gloss: "NÓS", confidence: 0.7 });
 
-  // Sentimentos
+  // Sentimentos / verbos / lugares — mantidos
   if (thumb && idx && !mid && !ring && pinky) cands.push({ gloss: "AMOR", confidence: 0.9 });
   if (idx && mid && !ring && !pinky && thumb) cands.push({ gloss: "PAZ", confidence: 0.78 });
   if (up >= 4 && palmUp && handHigh && c.hands.length > 1) cands.push({ gloss: "FELIZ", confidence: 0.74 });
   if (up <= 1 && handLow) cands.push({ gloss: "TRISTE", confidence: 0.7 });
-
-  // Verbos comuns
   if (up >= 4 && handNearMouth && !palmUp) cands.push({ gloss: "COMER", confidence: 0.78 });
   if (thumb && pinky && !idx && !mid && !ring && handNearMouth) cands.push({ gloss: "BEBER", confidence: 0.78 });
   if (idx && mid && ring && !pinky && handNearMouth) cands.push({ gloss: "FALAR", confidence: 0.72 });
@@ -85,19 +141,13 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   if (up >= 4 && c.hands.length > 1 && !palmUp) cands.push({ gloss: "ESTUDAR", confidence: 0.7 });
   if (idx && mid && !ring && !pinky && c.hands.length > 1) cands.push({ gloss: "TRABALHAR", confidence: 0.68 });
   if (up >= 3 && c.hands.length > 1 && handHigh) cands.push({ gloss: "APRENDER", confidence: 0.66 });
-
-  // Tempo
   if (idx && !mid && !ring && !pinky && h[8].x > 0.6) cands.push({ gloss: "FUTURO", confidence: 0.7 });
   if (idx && !mid && !ring && !pinky && h[8].x < 0.4) cands.push({ gloss: "PASSADO", confidence: 0.7 });
   if (up >= 4 && palmUp && Math.abs(h[9].y - 0.5) < 0.1) cands.push({ gloss: "HOJE", confidence: 0.65 });
-
-  // Lugar / objetos comuns
   if (up >= 4 && c.hands.length > 1 && handHigh && palmUp) cands.push({ gloss: "CASA", confidence: 0.66 });
   if (idx && mid && ring && pinky && !thumb && c.hands.length > 1) cands.push({ gloss: "ESCOLA", confidence: 0.64 });
   if (idx && mid && ring && pinky && !thumb && handNearMouth) cands.push({ gloss: "MEDICINA", confidence: 0.62 });
   if (idx && !mid && !ring && !pinky && handLow) cands.push({ gloss: "ÁGUA", confidence: 0.65 });
-
-  // Perguntas (sobrancelha franzida — aproximação por proximidade entre mãos)
   if (c.hands.length > 1 && dist(c.hands[0][9], c.hands[1][9]) < 0.1) cands.push({ gloss: "O-QUE", confidence: 0.6 });
 
   if (!cands.length) return null;
@@ -107,6 +157,7 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   if (c.face && c.face.length) top.confidence = Math.min(1, top.confidence + 0.03);
   return top;
 }
+
 
 interface UseHolistic {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -124,8 +175,10 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
   const holisticRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
   const lastEmitRef = useRef<{ gloss: string; at: number }>({ gloss: "", at: 0 });
+  const voteRef = useRef<{ gloss: string; confidence: number }[]>([]); // janela temporal
   const onGlossRef = useRef(onGloss);
   const frameTimesRef = useRef<number[]>([]);
+  const brightSampleRef = useRef<{ at: number; v: number }>({ at: 0, v: 1 });
   onGlossRef.current = onGloss;
 
   const stop = useCallback(() => {
@@ -153,8 +206,9 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         modelComplexity: 1,
         smoothLandmarks: true,
         refineFaceLandmarks: false,
-        minDetectionConfidence: 0.55,
-        minTrackingConfidence: 0.55,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+        selfieMode: true,
       });
 
       holistic.onResults((res: any) => {
@@ -166,7 +220,24 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-        if (lowLightBoost) ctx.filter = "brightness(1.15) contrast(1.1) saturate(1.05)";
+        // Boost adaptativo: amostra brilho a cada 500ms; quanto mais escuro, mais forte o filtro
+        if (lowLightBoost) {
+          const now0 = performance.now();
+          if (now0 - brightSampleRef.current.at > 500) {
+            try {
+              const tmp = document.createElement("canvas");
+              tmp.width = 16; tmp.height = 12;
+              tmp.getContext("2d")?.drawImage(res.image, 0, 0, 16, 12);
+              const d = tmp.getContext("2d")!.getImageData(0, 0, 16, 12).data;
+              let s = 0; for (let i = 0; i < d.length; i += 4) s += (d[i] + d[i + 1] + d[i + 2]) / 3;
+              brightSampleRef.current = { at: now0, v: s / (d.length / 4) / 255 };
+            } catch { /* ignore */ }
+          }
+          const v = brightSampleRef.current.v; // 0=escuro 1=claro
+          const b = v < 0.35 ? 1.45 : v < 0.55 ? 1.25 : 1.1;
+          const c0 = v < 0.35 ? 1.35 : v < 0.55 ? 1.2 : 1.08;
+          ctx.filter = `brightness(${b}) contrast(${c0}) saturate(1.05)`;
+        }
         ctx.drawImage(res.image, 0, 0, canvas.width, canvas.height);
         ctx.filter = "none";
 
@@ -192,16 +263,45 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         setFps(frameTimesRef.current.length);
 
         if (hands.length) {
-          const r = recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null });
+          // Tenta vocabulário; se nenhum candidato, cai para alfabeto manual
+          const r =
+            recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null }) ??
+            recognizeLetter(hands[0]);
+
           if (r) {
-            const ev: GlossEvent = { ...r, at: Date.now() };
-            setCurrent(ev);
-            if (r.gloss !== lastEmitRef.current.gloss || Date.now() - lastEmitRef.current.at > 1200) {
-              lastEmitRef.current = { gloss: r.gloss, at: Date.now() };
-              onGlossRef.current?.(ev);
+            // Voto temporal: mantém últimos 5 frames, exige maioria para emitir
+            const vote = voteRef.current;
+            vote.push(r);
+            if (vote.length > 5) vote.shift();
+            const counts: Record<string, { n: number; sum: number }> = {};
+            for (const v of vote) {
+              counts[v.gloss] = counts[v.gloss] || { n: 0, sum: 0 };
+              counts[v.gloss].n++; counts[v.gloss].sum += v.confidence;
             }
+            const top = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
+            if (!top) { ctx.restore(); return; }
+            const [best, info] = top;
+            const ratio = info.n / vote.length;
+            const avgConf = info.sum / info.n;
+            // confiança final ponderada pela estabilidade temporal
+            const stableConf = Math.min(1, avgConf * (0.6 + 0.4 * ratio));
+            const ev: GlossEvent = { gloss: best, confidence: stableConf, at: Date.now() };
+            setCurrent(ev);
+            // Limiar: precisa de pelo menos 3/5 frames coerentes e confiança ≥ 0.55
+            const fastSign = info.n >= 2 && avgConf >= 0.78; // sinais rápidos com alta confiança
+            const stableSign = info.n >= 3 && stableConf >= 0.55;
+            if (stableSign || fastSign) {
+              const debounce = /^[A-Z]$/.test(best) ? 450 : 700; // letras podem repetir mais rápido
+              if (best !== lastEmitRef.current.gloss || Date.now() - lastEmitRef.current.at > debounce) {
+                lastEmitRef.current = { gloss: best, at: Date.now() };
+                onGlossRef.current?.(ev);
+              }
+            }
+          } else {
+            voteRef.current = [];
           }
         } else {
+          voteRef.current = [];
           setCurrent(null);
         }
         ctx.restore();

@@ -59,7 +59,16 @@ function Conversa() {
   const flush = useCallback(async () => {
     const items = bufferRef.current;
     if (!items.length) return;
-    const glosses = items.map((i) => i.gloss);
+    const rawGlosses = items.map((i) => i.gloss);
+    // Agrupa letras consecutivas (A–Z) em [SOLETRADO:PALAVRA]
+    const glosses: string[] = [];
+    let spellBuf = "";
+    const flushSpell = () => { if (spellBuf) { glosses.push(`[SOLETRADO:${spellBuf}]`); spellBuf = ""; } };
+    for (const g of rawGlosses) {
+      if (/^[A-Z]$/.test(g)) spellBuf += g;
+      else { flushSpell(); glosses.push(g); }
+    }
+    flushSpell();
     const key = glosses.join("|");
     bufferRef.current = []; setBuffer([]);
 
@@ -77,7 +86,7 @@ function Conversa() {
 
     setTranslating(true);
     try {
-      const context = transcript.slice(0, 4).map((e) => e.text);
+      const context = transcript.slice(0, 8).map((e) => e.text).reverse();
       const out = await reconstruct({ data: { glosses, context } });
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign", text: out.sentence, glosses,
