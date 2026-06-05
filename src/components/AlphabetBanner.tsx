@@ -245,7 +245,7 @@ export function AlphabetBanner({ activeLetter, spelledWord = "", defaultOpen = t
                 </label>
 
                 {/* Grade A–Z */}
-                <div className="grid grid-cols-6 gap-2 sm:grid-cols-9 md:grid-cols-13 lg:grid-cols-13">
+                <div className="grid grid-cols-6 gap-2 sm:grid-cols-9 md:grid-cols-[repeat(13,minmax(0,1fr))]">
                   {filtered.map((l) => {
                     const isActive = activeLetter?.toUpperCase() === l;
                     return (
