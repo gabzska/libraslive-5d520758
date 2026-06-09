@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TraduzirRouteImport } from './routes/traduzir'
+import { Route as HospitalRouteImport } from './routes/hospital'
 import { Route as ConversaRouteImport } from './routes/conversa'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TraduzirRoute = TraduzirRouteImport.update({
   id: '/traduzir',
   path: '/traduzir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospitalRoute = HospitalRouteImport.update({
+  id: '/hospital',
+  path: '/hospital',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConversaRoute = ConversaRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/conversa': typeof ConversaRoute
+  '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/conversa': typeof ConversaRoute
+  '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/conversa': typeof ConversaRoute
+  '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/conversa' | '/traduzir'
+  fullPaths: '/' | '/conversa' | '/hospital' | '/traduzir'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/conversa' | '/traduzir'
-  id: '__root__' | '/' | '/conversa' | '/traduzir'
+  to: '/' | '/conversa' | '/hospital' | '/traduzir'
+  id: '__root__' | '/' | '/conversa' | '/hospital' | '/traduzir'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConversaRoute: typeof ConversaRoute
+  HospitalRoute: typeof HospitalRoute
   TraduzirRoute: typeof TraduzirRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/traduzir'
       fullPath: '/traduzir'
       preLoaderRoute: typeof TraduzirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospital': {
+      id: '/hospital'
+      path: '/hospital'
+      fullPath: '/hospital'
+      preLoaderRoute: typeof HospitalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conversa': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConversaRoute: ConversaRoute,
+  HospitalRoute: HospitalRoute,
   TraduzirRoute: TraduzirRoute,
 }
 export const routeTree = rootRouteImport
