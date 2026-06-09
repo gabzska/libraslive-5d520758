@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Mic, MicOff, Copy, Trash2, Moon, Sun, Hand, Sparkles, Volume2, Check } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Mic, MicOff, Copy, Trash2, Hand, Sparkles, Volume2, Check, GraduationCap, Stethoscope, Languages } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { translateToVLibras } from "@/lib/vlibras";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
+import { AppNav } from "@/components/AppNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
