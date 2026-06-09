@@ -1,0 +1,214 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Mic, MicOff, Send, Sparkles, Trash2, BookOpenText } from "lucide-react";
+import { AppNav } from "@/components/AppNav";
+import { VLibrasPlayer } from "@/components/VLibrasPlayer";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/traduzir")({
+  head: () => ({
+    meta: [
+      { title: "Traduzir Português para Libras — LibrasLive AI" },
+      { name: "description", content: "Digite ou fale em português e veja a tradução automática para Libras com avatar VLibras e soletração do alfabeto manual quando necessário." },
+      { property: "og:title", content: "Traduzir Português para Libras — LibrasLive AI" },
+      { property: "og:description", content: "Tradução automática Português → Libras com avatar VLibras." },
+    ],
+  }),
+  component: TraduzirPage,
+});
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+interface SignRow { palavra: string; slug: string; sinonimos: string[] | null }
+
+function TraduzirPage() {
+  const [text, setText] = useState("");
+  const [history, setHistory] = useState<{ id: string; text: string; at: number }[]>([]);
+
+  const { listening, interim, finalText, supported, start, stop } = useSpeechRecognition({
+    lang: "pt-BR",
+    onFinal: (t) => setText((cur) => (cur ? cur + " " + t : t)),
+  });
+
+  const { data: signs } = useQuery({
+    queryKey: ["signs-vocab"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sinais")
+        .select("palavra,slug,sinonimos")
+        .eq("aprovado", true)
+        .limit(2000);
+      if (error) throw error;
+      return data as SignRow[];
+    },
+  });
+
+  const vocab = useMemo(() => {
+    const m = new Map<string, SignRow>();
+    (signs ?? []).forEach((s) => {
+      m.set(s.slug, s);
+      m.set(slugify(s.palavra), s);
+      (s.sinonimos ?? []).forEach((syn) => m.set(slugify(syn), s));
+    });
+    return m;
+  }, [signs]);
+
+  const tokens = useMemo(() => {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    return words.map((w) => {
+      const key = slugify(w);
+      const match = vocab.get(key);
+      return { word: w, match, spell: !match && /^[a-zA-ZÀ-ÿ]+$/.test(w) };
+    });
+  }, [text, vocab]);
+
+  useEffect(() => {
+    if (interim) setText((cur) => cur); // keep textarea, interim shown separately
+  }, [interim]);
+
+  const submit = async () => {
+    const clean = text.trim();
+    if (!clean) return;
+    setHistory((h) => [{ id: crypto.randomUUID(), text: clean, at: Date.now() }, ...h].slice(0, 20));
+    try {
+      await supabase.from("historico_traducao").insert({
+        direcao: "pt_libras",
+        entrada: clean,
+        saida: clean,
+        confianca: 1,
+        contexto: { tokens: tokens.map((t) => ({ w: t.word, spell: !!t.spell })) },
+      });
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <main className="min-h-dvh">
+      <AppNav />
+      <section className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-6">
+          <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Português → Libras
+          </span>
+          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Digite ou fale, o avatar sinaliza</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Use o microfone ou escreva a frase. Palavras que não têm sinal próprio são soletradas pelo alfabeto manual automaticamente.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-5">
+          <div className="md:col-span-3">
+            <div className="rounded-3xl border bg-card/80 p-5 shadow-card backdrop-blur">
+              <label htmlFor="frase" className="text-xs font-medium uppercase tracking-wider text-primary">Frase em português</label>
+              <textarea
+                id="frase"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Ex.: Olá, eu me chamo Maria e quero estudar medicina."
+                className="mt-2 w-full resize-none rounded-2xl border bg-background/60 p-4 text-base outline-none focus:ring-2 focus:ring-ring"
+                rows={4}
+              />
+              {interim && <p className="mt-2 text-xs italic text-muted-foreground">{interim}</p>}
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {!listening ? (
+                  <button
+                    onClick={start}
+                    disabled={!supported}
+                    className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                  >
+                    <Mic className="h-4 w-4 text-primary" /> Ditar
+                  </button>
+                ) : (
+                  <button
+                    onClick={stop}
+                    className="inline-flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground"
+                  >
+                    <MicOff className="h-4 w-4" /> Parar ditado
+                  </button>
+                )}
+                <button
+                  onClick={submit}
+                  disabled={!text.trim()}
+                  className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" /> Traduzir e salvar
+                </button>
+                <button
+                  onClick={() => setText("")}
+                  disabled={!text}
+                  className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" /> Limpar
+                </button>
+              </div>
+
+              {tokens.length > 0 && (
+                <div className="mt-5 rounded-2xl border bg-background/50 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-primary">
+                    <BookOpenText className="h-3.5 w-3.5" /> Tokens reconhecidos
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {tokens.map((t, i) => (
+                      <span
+                        key={i}
+                        className={
+                          t.match
+                            ? "rounded-full bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary"
+                            : t.spell
+                              ? "rounded-full border border-dashed border-primary/40 px-2.5 py-1 text-xs text-muted-foreground"
+                              : "rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                        }
+                        title={t.match ? "Sinal próprio" : t.spell ? "Será soletrada" : "Palavra sem sinal"}
+                      >
+                        {t.word}
+                        {t.spell && <span className="ml-1 text-[10px] uppercase">soletrar</span>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {finalText && (
+                <p className="mt-3 text-xs text-muted-foreground">Última fala reconhecida: "{finalText}"</p>
+              )}
+            </div>
+
+            {history.length > 0 && (
+              <div className="mt-5 rounded-3xl border bg-card/70 p-5 shadow-card">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wider text-primary">Últimas traduções</p>
+                  <button onClick={() => setHistory([])} className="text-xs text-muted-foreground hover:text-foreground">Limpar</button>
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {history.map((h) => (
+                    <li key={h.id}>
+                      <button
+                        onClick={() => setText(h.text)}
+                        className="w-full rounded-2xl border bg-background/60 p-3 text-left text-sm hover:bg-accent"
+                      >
+                        {h.text}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <VLibrasPlayer text={text} hint="O avatar oficial do VLibras abre no canto e sinaliza a frase digitada. Em palavras sem sinal próprio, o alfabeto manual é soletrado." />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

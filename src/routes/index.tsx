@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Mic, MicOff, Copy, Trash2, Moon, Sun, Hand, Sparkles, Volume2, Check } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Mic, MicOff, Copy, Trash2, Hand, Sparkles, Volume2, Check, GraduationCap, Stethoscope, Languages } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { translateToVLibras } from "@/lib/vlibras";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
+import { AppNav } from "@/components/AppNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,7 +19,6 @@ export const Route = createFileRoute("/")({
 interface HistoryItem { id: string; text: string; at: number }
 
 function Index() {
-  const [dark, setDark] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -29,10 +29,6 @@ function Index() {
       setHistory((h) => [{ id: crypto.randomUUID(), text, at: Date.now() }, ...h].slice(0, 30));
     },
   });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
 
   const displayText = useMemo(() => {
     if (interim) return interim;
@@ -51,29 +47,10 @@ function Index() {
   return (
     <main className="min-h-dvh">
       <VLibrasWidget />
-
-      {/* NAV */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-10 w-10 place-items-center rounded-xl gradient-primary shadow-glow">
-            <Hand className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div className="leading-tight">
-            <p className="font-display text-lg font-bold tracking-tight">LibrasLive <span className="text-primary">AI</span></p>
-            <p className="text-[11px] text-muted-foreground">Comunicação acessível em tempo real</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setDark((d) => !d)}
-          aria-label="Alternar modo escuro"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card/70 backdrop-blur transition hover:bg-accent"
-        >
-          {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-      </header>
+      <AppNav />
 
       {/* HERO */}
-      <section className="mx-auto max-w-6xl px-5 pt-4 pb-10 text-center">
+      <section className="mx-auto max-w-6xl px-5 pt-8 pb-10 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-primary" /> Powered by VLibras + Web Speech API
         </span>
@@ -89,11 +66,17 @@ function Index() {
           Pensado para escolas, hospitais, universidades e órgãos públicos.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            to="/conversa"
-            className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110"
-          >
-            <Sparkles className="h-4 w-4" /> Abrir modo conversa (câmera + voz)
+          <Link to="/conversa" className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110">
+            <Sparkles className="h-4 w-4" /> Modo conversa (câmera + voz)
+          </Link>
+          <Link to="/traduzir" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
+            <Languages className="h-4 w-4 text-primary" /> Português → Libras
+          </Link>
+          <Link to="/hospital" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
+            <Stethoscope className="h-4 w-4 text-primary" /> Modo Hospital
+          </Link>
+          <Link to="/aprender" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
+            <GraduationCap className="h-4 w-4 text-primary" /> Aprender Libras
           </Link>
         </div>
       </section>
