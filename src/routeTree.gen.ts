@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TraduzirRouteImport } from './routes/traduzir'
 import { Route as HospitalRouteImport } from './routes/hospital'
 import { Route as ConversaRouteImport } from './routes/conversa'
+import { Route as AprenderRouteImport } from './routes/aprender'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TraduzirRoute = TraduzirRouteImport.update({
@@ -29,6 +30,11 @@ const ConversaRoute = ConversaRouteImport.update({
   path: '/conversa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AprenderRoute = AprenderRouteImport.update({
+  id: '/aprender',
+  path: '/aprender',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/conversa' | '/hospital' | '/traduzir'
+  fullPaths: '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/conversa' | '/hospital' | '/traduzir'
-  id: '__root__' | '/' | '/conversa' | '/hospital' | '/traduzir'
+  to: '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
+  id: '__root__' | '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AprenderRoute: typeof AprenderRoute
   ConversaRoute: typeof ConversaRoute
   HospitalRoute: typeof HospitalRoute
   TraduzirRoute: typeof TraduzirRoute
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConversaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/aprender': {
+      id: '/aprender'
+      path: '/aprender'
+      fullPath: '/aprender'
+      preLoaderRoute: typeof AprenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AprenderRoute: AprenderRoute,
   ConversaRoute: ConversaRoute,
   HospitalRoute: HospitalRoute,
   TraduzirRoute: TraduzirRoute,
@@ -111,3 +129,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
