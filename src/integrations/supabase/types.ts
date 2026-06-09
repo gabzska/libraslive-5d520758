@@ -14,13 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categorias: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      contribuicoes_sinais: {
+        Row: {
+          categoria_sugerida: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          palavra: string
+          revisor_id: string | null
+          status: string
+          user_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          categoria_sugerida?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          palavra: string
+          revisor_id?: string | null
+          status?: string
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          categoria_sugerida?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          palavra?: string
+          revisor_id?: string | null
+          status?: string
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      feedbacks: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem: string | null
+          payload: Json | null
+          sinal_id: string | null
+          status: string
+          tipo: string
+          traducao_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          payload?: Json | null
+          sinal_id?: string | null
+          status?: string
+          tipo: string
+          traducao_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          payload?: Json | null
+          sinal_id?: string | null
+          status?: string
+          tipo?: string
+          traducao_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedbacks_sinal_id_fkey"
+            columns: ["sinal_id"]
+            isOneToOne: false
+            referencedRelation: "sinais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedbacks_traducao_id_fkey"
+            columns: ["traducao_id"]
+            isOneToOne: false
+            referencedRelation: "historico_traducao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frases_hospital: {
+        Row: {
+          categoria: string
+          created_at: string
+          gloss: string | null
+          icone: string | null
+          id: string
+          ordem: number
+          prioridade: number
+          texto_pt: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          gloss?: string | null
+          icone?: string | null
+          id?: string
+          ordem?: number
+          prioridade?: number
+          texto_pt: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          gloss?: string | null
+          icone?: string | null
+          id?: string
+          ordem?: number
+          prioridade?: number
+          texto_pt?: string
+        }
+        Relationships: []
+      }
+      historico_traducao: {
+        Row: {
+          confianca: number | null
+          contexto: Json | null
+          created_at: string
+          direcao: string
+          entrada: string
+          id: string
+          saida: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confianca?: number | null
+          contexto?: Json | null
+          created_at?: string
+          direcao: string
+          entrada: string
+          id?: string
+          saida?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confianca?: number | null
+          contexto?: Json | null
+          created_at?: string
+          direcao?: string
+          entrada?: string
+          id?: string
+          saida?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      progresso_educacao: {
+        Row: {
+          acertos: number
+          created_at: string
+          erros: number
+          id: string
+          modulo: string
+          payload: Json | null
+          tempo_seg: number
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          created_at?: string
+          erros?: number
+          id?: string
+          modulo: string
+          payload?: Json | null
+          tempo_seg?: number
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          created_at?: string
+          erros?: number
+          id?: string
+          modulo?: string
+          payload?: Json | null
+          tempo_seg?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sinais: {
+        Row: {
+          animacao_url: string | null
+          aprovado: boolean
+          categoria_id: string | null
+          confianca: number
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          origem: string
+          palavra: string
+          relacionados: string[]
+          sinonimos: string[]
+          slug: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          animacao_url?: string | null
+          aprovado?: boolean
+          categoria_id?: string | null
+          confianca?: number
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          origem?: string
+          palavra: string
+          relacionados?: string[]
+          sinonimos?: string[]
+          slug: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          animacao_url?: string | null
+          aprovado?: boolean
+          categoria_id?: string | null
+          confianca?: number
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          origem?: string
+          palavra?: string
+          relacionados?: string[]
+          sinonimos?: string[]
+          slug?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sinais_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
