@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      aulas: {
+        Row: {
+          autor_nome: string | null
+          created_at: string
+          descricao: string | null
+          disciplina: string | null
+          id: string
+          nivel: string | null
+          publica: boolean
+          slug: string
+          texto_pt: string
+          titulo: string
+          updated_at: string
+          visualizacoes: number
+        }
+        Insert: {
+          autor_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          disciplina?: string | null
+          id?: string
+          nivel?: string | null
+          publica?: boolean
+          slug: string
+          texto_pt: string
+          titulo: string
+          updated_at?: string
+          visualizacoes?: number
+        }
+        Update: {
+          autor_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          disciplina?: string | null
+          id?: string
+          nivel?: string | null
+          publica?: boolean
+          slug?: string
+          texto_pt?: string
+          titulo?: string
+          updated_at?: string
+          visualizacoes?: number
+        }
+        Relationships: []
+      }
       categorias: {
         Row: {
           created_at: string
