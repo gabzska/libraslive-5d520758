@@ -103,13 +103,14 @@ function Index() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {MODULES.map((m) => {
             const Icon = m.icon;
+            const accent = "accent" in m && m.accent;
             return (
               <Link
                 key={m.title + m.to}
                 to={m.to}
-                className={`group relative overflow-hidden rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur transition hover:border-primary/50 hover:bg-card ${m.accent ? "ring-1 ring-primary/30" : ""}`}
+                className={`group relative overflow-hidden rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur transition hover:border-primary/50 hover:bg-card ${accent ? "ring-1 ring-primary/30" : ""}`}
               >
-                {m.accent && (
+                {accent && (
                   <div className="absolute inset-x-0 -top-20 h-40 bg-gradient-to-b from-primary/20 to-transparent blur-2xl" />
                 )}
                 <div className="relative">
