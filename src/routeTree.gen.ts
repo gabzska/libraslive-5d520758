@@ -11,9 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TraduzirRouteImport } from './routes/traduzir'
 import { Route as HospitalRouteImport } from './routes/hospital'
+import { Route as EducacaoRouteImport } from './routes/educacao'
 import { Route as ConversaRouteImport } from './routes/conversa'
 import { Route as AprenderRouteImport } from './routes/aprender'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
+import { Route as ApiPublicTranslateRouteImport } from './routes/api/public/translate'
+import { Route as ApiPublicSignsRouteImport } from './routes/api/public/signs'
+import { Route as ApiPublicHospitalPhrasesRouteImport } from './routes/api/public/hospital-phrases'
+import { Route as ApiPublicAulasRouteImport } from './routes/api/public/aulas'
 
 const TraduzirRoute = TraduzirRouteImport.update({
   id: '/traduzir',
@@ -23,6 +29,11 @@ const TraduzirRoute = TraduzirRouteImport.update({
 const HospitalRoute = HospitalRouteImport.update({
   id: '/hospital',
   path: '/hospital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducacaoRoute = EducacaoRouteImport.update({
+  id: '/educacao',
+  path: '/educacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConversaRoute = ConversaRouteImport.update({
@@ -40,43 +51,126 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EducacaoSlugRoute = EducacaoSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => EducacaoRoute,
+} as any)
+const ApiPublicTranslateRoute = ApiPublicTranslateRouteImport.update({
+  id: '/api/public/translate',
+  path: '/api/public/translate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSignsRoute = ApiPublicSignsRouteImport.update({
+  id: '/api/public/signs',
+  path: '/api/public/signs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHospitalPhrasesRoute =
+  ApiPublicHospitalPhrasesRouteImport.update({
+    id: '/api/public/hospital-phrases',
+    path: '/api/public/hospital-phrases',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
+  id: '/api/public/aulas',
+  path: '/api/public/aulas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
+  '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
+  '/educacao/$slug': typeof EducacaoSlugRoute
+  '/api/public/aulas': typeof ApiPublicAulasRoute
+  '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
+  '/api/public/signs': typeof ApiPublicSignsRoute
+  '/api/public/translate': typeof ApiPublicTranslateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
+  '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
+  '/educacao/$slug': typeof EducacaoSlugRoute
+  '/api/public/aulas': typeof ApiPublicAulasRoute
+  '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
+  '/api/public/signs': typeof ApiPublicSignsRoute
+  '/api/public/translate': typeof ApiPublicTranslateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
   '/conversa': typeof ConversaRoute
+  '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/traduzir': typeof TraduzirRoute
+  '/educacao/$slug': typeof EducacaoSlugRoute
+  '/api/public/aulas': typeof ApiPublicAulasRoute
+  '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
+  '/api/public/signs': typeof ApiPublicSignsRoute
+  '/api/public/translate': typeof ApiPublicTranslateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
+  fullPaths:
+    | '/'
+    | '/aprender'
+    | '/conversa'
+    | '/educacao'
+    | '/hospital'
+    | '/traduzir'
+    | '/educacao/$slug'
+    | '/api/public/aulas'
+    | '/api/public/hospital-phrases'
+    | '/api/public/signs'
+    | '/api/public/translate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
-  id: '__root__' | '/' | '/aprender' | '/conversa' | '/hospital' | '/traduzir'
+  to:
+    | '/'
+    | '/aprender'
+    | '/conversa'
+    | '/educacao'
+    | '/hospital'
+    | '/traduzir'
+    | '/educacao/$slug'
+    | '/api/public/aulas'
+    | '/api/public/hospital-phrases'
+    | '/api/public/signs'
+    | '/api/public/translate'
+  id:
+    | '__root__'
+    | '/'
+    | '/aprender'
+    | '/conversa'
+    | '/educacao'
+    | '/hospital'
+    | '/traduzir'
+    | '/educacao/$slug'
+    | '/api/public/aulas'
+    | '/api/public/hospital-phrases'
+    | '/api/public/signs'
+    | '/api/public/translate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AprenderRoute: typeof AprenderRoute
   ConversaRoute: typeof ConversaRoute
+  EducacaoRoute: typeof EducacaoRouteWithChildren
   HospitalRoute: typeof HospitalRoute
   TraduzirRoute: typeof TraduzirRoute
+  ApiPublicAulasRoute: typeof ApiPublicAulasRoute
+  ApiPublicHospitalPhrasesRoute: typeof ApiPublicHospitalPhrasesRoute
+  ApiPublicSignsRoute: typeof ApiPublicSignsRoute
+  ApiPublicTranslateRoute: typeof ApiPublicTranslateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -93,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/hospital'
       fullPath: '/hospital'
       preLoaderRoute: typeof HospitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/educacao': {
+      id: '/educacao'
+      path: '/educacao'
+      fullPath: '/educacao'
+      preLoaderRoute: typeof EducacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conversa': {
@@ -116,16 +217,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/educacao/$slug': {
+      id: '/educacao/$slug'
+      path: '/$slug'
+      fullPath: '/educacao/$slug'
+      preLoaderRoute: typeof EducacaoSlugRouteImport
+      parentRoute: typeof EducacaoRoute
+    }
+    '/api/public/translate': {
+      id: '/api/public/translate'
+      path: '/api/public/translate'
+      fullPath: '/api/public/translate'
+      preLoaderRoute: typeof ApiPublicTranslateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/signs': {
+      id: '/api/public/signs'
+      path: '/api/public/signs'
+      fullPath: '/api/public/signs'
+      preLoaderRoute: typeof ApiPublicSignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hospital-phrases': {
+      id: '/api/public/hospital-phrases'
+      path: '/api/public/hospital-phrases'
+      fullPath: '/api/public/hospital-phrases'
+      preLoaderRoute: typeof ApiPublicHospitalPhrasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/aulas': {
+      id: '/api/public/aulas'
+      path: '/api/public/aulas'
+      fullPath: '/api/public/aulas'
+      preLoaderRoute: typeof ApiPublicAulasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface EducacaoRouteChildren {
+  EducacaoSlugRoute: typeof EducacaoSlugRoute
+}
+
+const EducacaoRouteChildren: EducacaoRouteChildren = {
+  EducacaoSlugRoute: EducacaoSlugRoute,
+}
+
+const EducacaoRouteWithChildren = EducacaoRoute._addFileChildren(
+  EducacaoRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AprenderRoute: AprenderRoute,
   ConversaRoute: ConversaRoute,
+  EducacaoRoute: EducacaoRouteWithChildren,
   HospitalRoute: HospitalRoute,
   TraduzirRoute: TraduzirRoute,
+  ApiPublicAulasRoute: ApiPublicAulasRoute,
+  ApiPublicHospitalPhrasesRoute: ApiPublicHospitalPhrasesRoute,
+  ApiPublicSignsRoute: ApiPublicSignsRoute,
+  ApiPublicTranslateRoute: ApiPublicTranslateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
