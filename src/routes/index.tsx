@@ -1,236 +1,168 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Mic, MicOff, Copy, Trash2, Hand, Sparkles, Volume2, Check, GraduationCap, Stethoscope, Languages } from "lucide-react";
-import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
-import { translateToVLibras } from "@/lib/vlibras";
+import { Sparkles, Hand, Mic, Languages, GraduationCap, Stethoscope, BookOpen, Library, ArrowRight, Code2 } from "lucide-react";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
 import { AppNav } from "@/components/AppNav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LibrasLive AI — Voz para Libras em tempo real" },
-      { name: "description", content: "Fale ao microfone e veja a tradução em Libras em tempo real com avatar VLibras. Acessibilidade para todos." },
+      { title: "LibrasLive AI — Ecossistema de acessibilidade em Libras" },
+      { name: "description", content: "Plataforma modular de tradução bidirecional Libras ↔ Português em tempo real, biblioteca de sinais, aprendizagem, educação e saúde acessível." },
+      { property: "og:title", content: "LibrasLive AI — Ecossistema de acessibilidade em Libras" },
+      { property: "og:description", content: "Tradução em tempo real, biblioteca de sinais, módulos educacional e hospitalar e API pública para integrações." },
     ],
   }),
   component: Index,
 });
 
-interface HistoryItem { id: string; text: string; at: number }
+const MODULES = [
+  {
+    to: "/conversa" as const,
+    icon: Hand,
+    tag: "Módulo 1 · Núcleo",
+    title: "Tradução em tempo real",
+    desc: "Câmera reconhece sinais e voz reconhece português. Tradução bidirecional com IA contextual.",
+    cta: "Abrir conversa",
+    accent: true,
+  },
+  {
+    to: "/traduzir" as const,
+    icon: Languages,
+    tag: "Módulo 1 · PT → Libras",
+    title: "Texto e voz para Libras",
+    desc: "Digite ou fale em português e veja o avatar VLibras sinalizar com fallback de soletração.",
+    cta: "Traduzir agora",
+  },
+  {
+    to: "/aprender" as const,
+    icon: GraduationCap,
+    tag: "Módulo 3 · Aprendizagem",
+    title: "Aprender Libras",
+    desc: "Lições do alfabeto, quiz com correção por câmera e estatísticas de evolução.",
+    cta: "Começar a aprender",
+  },
+  {
+    to: "/educacao" as const,
+    icon: BookOpen,
+    tag: "Módulo 4 · Educacional",
+    title: "Aulas acessíveis",
+    desc: "Crie e compartilhe conteúdos didáticos traduzidos em Libras com link público.",
+    cta: "Explorar aulas",
+  },
+  {
+    to: "/hospital" as const,
+    icon: Stethoscope,
+    tag: "Módulo 5 · Saúde",
+    title: "Comunicação clínica",
+    desc: "Frases médicas essenciais, emergência e diálogo bidirecional paciente ↔ profissional.",
+    cta: "Abrir modo hospital",
+  },
+  {
+    to: "/aprender" as const,
+    icon: Library,
+    tag: "Módulo 2 · Biblioteca",
+    title: "Biblioteca de sinais",
+    desc: "Banco colaborativo com busca por palavra, categoria e o alfabeto manual completo.",
+    cta: "Pesquisar sinais",
+  },
+] as const;
 
 function Index() {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const { listening, interim, finalText, supported, error, start, stop } = useSpeechRecognition({
-    lang: "pt-BR",
-    onFinal: (text) => {
-      translateToVLibras(text);
-      setHistory((h) => [{ id: crypto.randomUUID(), text, at: Date.now() }, ...h].slice(0, 30));
-    },
-  });
-
-  const displayText = useMemo(() => {
-    if (interim) return interim;
-    if (finalText) return finalText;
-    return "";
-  }, [interim, finalText]);
-
-  const copy = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 1500);
-    } catch { /* ignore */ }
-  };
-
   return (
     <main className="min-h-dvh">
       <VLibrasWidget />
       <AppNav />
 
       {/* HERO */}
-      <section className="mx-auto max-w-6xl px-5 pt-8 pb-10 text-center">
+      <section className="mx-auto max-w-6xl px-5 pt-10 pb-6 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-          <Sparkles className="h-3.5 w-3.5 text-primary" /> Powered by VLibras + Web Speech API
+          <Sparkles className="h-3.5 w-3.5 text-primary" /> Ecossistema modular · Libras ↔ Português
         </span>
         <h1 className="mx-auto mt-5 max-w-3xl text-balance text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
-          Sua voz traduzida para{" "}
+          Acessibilidade em Libras como{" "}
           <span className="bg-gradient-to-r from-[oklch(0.62_0.21_295)] to-[oklch(0.72_0.18_280)] bg-clip-text text-transparent">
-            Libras
-          </span>{" "}
-          em tempo real
+            ecossistema
+          </span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-balance text-sm text-muted-foreground sm:text-base">
-          Fale ao microfone e veja a transcrição e o avatar de Libras sinalizando instantaneamente.
-          Pensado para escolas, hospitais, universidades e órgãos públicos.
+        <p className="mx-auto mt-4 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
+          Tradução bidirecional em tempo real no centro. Em volta, módulos para biblioteca de sinais, aprendizagem,
+          educação e saúde — todos prontos para escolas, hospitais, universidades e órgãos públicos.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link to="/conversa" className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110">
-            <Sparkles className="h-4 w-4" /> Modo conversa (câmera + voz)
+            <Mic className="h-4 w-4" /> Começar tradução
           </Link>
-          <Link to="/traduzir" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
-            <Languages className="h-4 w-4 text-primary" /> Português → Libras
-          </Link>
-          <Link to="/hospital" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
-            <Stethoscope className="h-4 w-4 text-primary" /> Modo Hospital
-          </Link>
-          <Link to="/aprender" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
-            <GraduationCap className="h-4 w-4 text-primary" /> Aprender Libras
+          <Link to="/educacao" className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-medium transition hover:bg-accent">
+            <BookOpen className="h-4 w-4 text-primary" /> Ver aulas acessíveis
           </Link>
         </div>
       </section>
 
-      {/* MAIN GRID */}
-      <section className="mx-auto grid max-w-6xl gap-5 px-5 pb-12 md:grid-cols-5">
-        {/* Avatar card */}
-        <div className="md:col-span-2">
-          <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-6 shadow-card backdrop-blur">
-            <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
-            <div className="relative">
-              <p className="text-xs font-medium uppercase tracking-wider text-primary">Avatar de Libras</p>
-              <h2 className="mt-1 font-display text-xl font-semibold">Tradução visual</h2>
-
-              <div className="mt-5 grid place-items-center rounded-2xl border bg-gradient-to-b from-secondary/60 to-background/60 px-4 py-10">
-                <div className="float-soft grid h-40 w-40 place-items-center rounded-full gradient-primary shadow-glow">
-                  <Hand className="h-16 w-16 text-primary-foreground" />
+      {/* MODULES GRID */}
+      <section className="mx-auto max-w-6xl px-5 pb-10">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {MODULES.map((m) => {
+            const Icon = m.icon;
+            return (
+              <Link
+                key={m.title + m.to}
+                to={m.to}
+                className={`group relative overflow-hidden rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur transition hover:border-primary/50 hover:bg-card ${m.accent ? "ring-1 ring-primary/30" : ""}`}
+              >
+                {m.accent && (
+                  <div className="absolute inset-x-0 -top-20 h-40 bg-gradient-to-b from-primary/20 to-transparent blur-2xl" />
+                )}
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl gradient-primary shadow-glow">
+                      <Icon className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider text-primary">{m.tag}</span>
+                  </div>
+                  <h2 className="mt-4 font-display text-lg font-semibold">{m.title}</h2>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{m.desc}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                    {m.cta} <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                  </span>
                 </div>
-                <p className="mt-5 text-center text-sm text-muted-foreground">
-                  Toque no botão <span className="font-medium text-foreground">VLibras</span> no canto inferior direito para abrir o avatar oficial e ver a sinalização.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Controls + transcript */}
-        <div className="md:col-span-3">
-          <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-6 shadow-card backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-primary">Transcrição</p>
-                <h2 className="mt-1 font-display text-xl font-semibold">Fale agora</h2>
-              </div>
-              <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${listening ? "border-primary/40 bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                <span className={`h-2 w-2 rounded-full ${listening ? "bg-primary mic-pulse" : "bg-muted-foreground/50"}`} />
-                {listening ? "Microfone ativo" : "Microfone parado"}
-              </div>
-            </div>
-
-            <div className="mt-5 min-h-[160px] rounded-2xl border bg-background/60 p-5 text-lg leading-relaxed">
-              {displayText ? (
-                <p className={interim && !finalText ? "text-muted-foreground" : "text-foreground"}>
-                  {displayText}
-                </p>
-              ) : (
-                <p className="text-muted-foreground">
-                  {supported
-                    ? "Sua fala aparecerá aqui. Pressione “Iniciar” e comece a falar em português."
-                    : "Seu navegador não suporta reconhecimento de voz. Use o Chrome ou Edge no desktop ou Android."}
-                </p>
-              )}
-            </div>
-
-            {error && (
-              <p className="mt-3 text-sm text-destructive">Erro: {error}. Verifique a permissão do microfone.</p>
-            )}
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              {!listening ? (
-                <button
-                  onClick={start}
-                  disabled={!supported}
-                  className="inline-flex items-center gap-2 rounded-full gradient-primary px-6 py-3 font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-50"
-                >
-                  <Mic className="h-4 w-4" /> Iniciar gravação
-                </button>
-              ) : (
-                <button
-                  onClick={stop}
-                  className="inline-flex items-center gap-2 rounded-full bg-destructive px-6 py-3 font-medium text-destructive-foreground shadow-card transition hover:brightness-110"
-                >
-                  <MicOff className="h-4 w-4" /> Parar gravação
-                </button>
-              )}
-
-              <button
-                onClick={() => finalText && copy(finalText, "current")}
-                disabled={!finalText}
-                className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-3 text-sm font-medium transition hover:bg-accent disabled:opacity-50"
-              >
-                {copiedId === "current" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                {copiedId === "current" ? "Copiado" : "Copiar texto"}
-              </button>
-
-              <button
-                onClick={() => finalText && translateToVLibras(finalText)}
-                disabled={!finalText}
-                className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-3 text-sm font-medium transition hover:bg-accent disabled:opacity-50"
-              >
-                <Volume2 className="h-4 w-4 text-primary" /> Re-sinalizar
-              </button>
-            </div>
-          </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      {/* HISTORY */}
-      <section className="mx-auto max-w-6xl px-5 pb-16">
-        <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-primary">Histórico</p>
-              <h2 className="mt-1 font-display text-xl font-semibold">Últimas frases</h2>
+      {/* API + ARQUITETURA */}
+      <section className="mx-auto max-w-6xl px-5 pb-14">
+        <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur md:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary">
+                <Code2 className="h-4 w-4" /> Arquitetura modular & API pública
+              </div>
+              <h2 className="mt-2 font-display text-2xl font-bold">Pronto para integrar com qualquer aplicação</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                O LibrasLive expõe endpoints REST públicos para tradução de glosas, busca de sinais, frases hospitalares e
+                aulas acessíveis — sem chave, com CORS aberto. Cada módulo é um serviço independente, permitindo evolução
+                contínua sem reconstruir o sistema.
+              </p>
             </div>
-            {history.length > 0 && (
-              <button
-                onClick={() => setHistory([])}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-accent"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Limpar
-              </button>
-            )}
+            <div className="w-full max-w-md rounded-2xl border bg-background/60 p-4 font-mono text-xs text-muted-foreground">
+              <p className="text-primary">GET /api/public/signs?q=agua</p>
+              <p>GET /api/public/hospital-phrases?categoria=emergencia</p>
+              <p>GET /api/public/aulas</p>
+              <p>POST /api/public/translate</p>
+              <p className="ml-3 text-foreground/80">{`{ "glosses": ["EU","QUERER","ÁGUA"] }`}</p>
+            </div>
           </div>
-
-          {history.length === 0 ? (
-            <p className="mt-6 text-sm text-muted-foreground">Suas frases reconhecidas aparecerão aqui.</p>
-          ) : (
-            <ul className="mt-5 space-y-3">
-              {history.map((h) => (
-                <li key={h.id} className="group flex items-start gap-3 rounded-2xl border bg-background/60 p-4">
-                  <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary/15 text-primary">
-                    <Hand className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-relaxed">{h.text}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {new Date(h.at).toLocaleTimeString("pt-BR")}
-                    </p>
-                  </div>
-                  <div className="flex flex-none items-center gap-1.5 opacity-0 transition group-hover:opacity-100">
-                    <button
-                      onClick={() => translateToVLibras(h.text)}
-                      className="rounded-full border bg-card p-2 hover:bg-accent"
-                      aria-label="Sinalizar novamente"
-                    >
-                      <Volume2 className="h-3.5 w-3.5 text-primary" />
-                    </button>
-                    <button
-                      onClick={() => copy(h.text, h.id)}
-                      className="rounded-full border bg-card p-2 hover:bg-accent"
-                      aria-label="Copiar"
-                    >
-                      {copiedId === h.id ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="mt-6 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+            <li className="rounded-xl border bg-background/40 px-3 py-2"><span className="text-foreground">Core Translation Engine</span> · IA contextual + VLibras</li>
+            <li className="rounded-xl border bg-background/40 px-3 py-2"><span className="text-foreground">Signal Library Service</span> · banco colaborativo de sinais</li>
+            <li className="rounded-xl border bg-background/40 px-3 py-2"><span className="text-foreground">Learning Service</span> · lições, quiz e progresso</li>
+            <li className="rounded-xl border bg-background/40 px-3 py-2"><span className="text-foreground">Education + Health</span> · aulas e comunicação clínica</li>
+          </ul>
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="border-t bg-card/40 backdrop-blur">
         <div className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted-foreground">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
