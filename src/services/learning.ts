@@ -10,8 +10,8 @@ export async function saveProgresso(input: {
   acertos: number;
   erros: number;
   tempo_seg?: number;
-  payload?: Record<string, unknown>;
+  payload?: unknown;
 }) {
-  const { error } = await supabase.from("progresso_educacao").insert(input);
+  const { error } = await supabase.from("progresso_educacao").insert(input as never);
   if (error) throw error;
 }
