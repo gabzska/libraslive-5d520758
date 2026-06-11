@@ -1,58 +1,55 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   GraduationCap, Trophy, Flame, BookMarked, Sparkles, ChevronRight, Check, X, Volume2,
+  Medal, Crown, Zap,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppNav } from "@/components/AppNav";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { supabase } from "@/integrations/supabase/client";
 import { translateToVLibras } from "@/lib/vlibras";
+import {
+  type GamificationState, load as loadGam, applyEvent, levelProgress, levelFromXp,
+  MEDALS, syncRanking, fetchLeaderboard, save as saveGam,
+} from "@/services/gamification";
 
 export const Route = createFileRoute("/aprender")({
   head: () => ({
     meta: [
       { title: "Aprender Libras — LibrasLive AI" },
-      { name: "description", content: "Estude o alfabeto manual, faça quiz interativo e explore o vocabulário de Libras com avatar sinalizando cada palavra." },
+      { name: "description", content: "Aprenda Libras com gamificação: XP, níveis, sequência diária, medalhas e ranking nacional." },
       { property: "og:title", content: "Aprender Libras — LibrasLive AI" },
-      { property: "og:description", content: "Alfabeto, quiz e vocabulário de Libras com avatar VLibras." },
+      { property: "og:description", content: "Alfabeto, quiz, vocabulário e ranking de Libras com avatar VLibras." },
     ],
   }),
   component: AprenderPage,
 });
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const STORAGE_KEY = "libraslive_progress_v1";
 
-interface Progress { acertos: number; erros: number; streak: number; learned: string[]; quizzes: number }
-
-function loadProgress(): Progress {
-  if (typeof window === "undefined") return { acertos: 0, erros: 0, streak: 0, learned: [], quizzes: 0 };
-  try {
-    return { acertos: 0, erros: 0, streak: 0, learned: [], quizzes: 0, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
-  } catch {
-    return { acertos: 0, erros: 0, streak: 0, learned: [], quizzes: 0 };
-  }
-}
-function saveProgress(p: Progress) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* ignore */ }
-}
-
-type Tab = "alfabeto" | "quiz" | "sinais";
+type Tab = "alfabeto" | "quiz" | "sinais" | "ranking";
 
 function AprenderPage() {
   const [tab, setTab] = useState<Tab>("alfabeto");
-  const [progress, setProgress] = useState<Progress>({ acertos: 0, erros: 0, streak: 0, learned: [], quizzes: 0 });
-  useEffect(() => { setProgress(loadProgress()); }, []);
-  const update = (p: Partial<Progress>) => {
-    setProgress((cur) => {
-      const next = { ...cur, ...p };
-      saveProgress(next);
+  const [state, setState] = useState<GamificationState>(() => loadGam());
+  useEffect(() => { setState(loadGam()); }, []);
+
+  const award = useCallback((fonte: Parameters<typeof applyEvent>[1], extra?: Parameters<typeof applyEvent>[2]) => {
+    setState((cur) => {
+      const { state: next, gainedXp, newMedals } = applyEvent(cur, fonte, extra);
+      if (gainedXp > 0) toast.success(`+${gainedXp} XP`, { description: fonteLabel(fonte) });
+      newMedals.forEach((id) => {
+        const m = MEDALS.find((x) => x.id === id);
+        if (m) toast(`🏅 Medalha desbloqueada`, { description: `${m.icone} ${m.nome} — ${m.descricao}` });
+      });
       return next;
     });
-  };
-  const level = Math.floor(progress.acertos / 20) + 1;
+  }, []);
+
+  const lp = useMemo(() => levelProgress(state.xp), [state.xp]);
 
   return (
     <main className="min-h-dvh">
@@ -60,28 +57,71 @@ function AprenderPage() {
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-            <GraduationCap className="h-3.5 w-3.5 text-primary" /> Modo Educação
+            <GraduationCap className="h-3.5 w-3.5 text-primary" /> LibrasLive Learn
           </span>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">Aprenda Libras no seu ritmo</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">Aprenda Libras com gamificação</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Treine o alfabeto manual, faça quizzes e explore o vocabulário com o avatar sinalizando cada palavra.
+            Ganhe XP, suba de nível, mantenha sua sequência diária e dispute o ranking nacional do LibrasLive.
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat icon={Trophy} label="Acertos" value={progress.acertos} />
-          <Stat icon={Flame} label="Sequência" value={progress.streak} />
-          <Stat icon={BookMarked} label="Aprendidos" value={progress.learned.length} />
-          <Stat icon={Sparkles} label="Nível" value={level} />
+        {/* Hero gamification */}
+        <div className="mb-5 grid gap-4 md:grid-cols-3">
+          <div className="md:col-span-2 rounded-3xl border bg-gradient-to-br from-primary/15 via-card to-card p-5 shadow-card">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-glow">
+                  <Crown className="h-7 w-7" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Nível {lp.level}</p>
+                  <p className="font-display text-2xl font-bold">{state.xp.toLocaleString("pt-BR")} XP</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Próximo nível</p>
+                <p className="text-sm font-semibold">{lp.current}/{lp.total} XP</p>
+              </div>
+            </div>
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-background/60">
+              <div
+                className="h-full gradient-primary transition-all"
+                style={{ width: `${Math.min(100, (lp.current / Math.max(1, lp.total)) * 100)}%` }}
+              />
+            </div>
+          </div>
+          <div className="rounded-3xl border bg-card/80 p-5 shadow-card">
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-orange-500/15 text-orange-500">
+                <Flame className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Sequência diária</p>
+                <p className="font-display text-2xl font-bold">{state.streakAtual} dia{state.streakAtual === 1 ? "" : "s"}</p>
+                <p className="text-xs text-muted-foreground">Recorde: {state.streakRecorde}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Quick stats */}
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat icon={Trophy} label="Acertos" value={state.acertos} />
+          <Stat icon={Zap} label="Combo" value={state.combo} />
+          <Stat icon={BookMarked} label="Aprendidos" value={state.learned.length} />
+          <Stat icon={Medal} label="Medalhas" value={state.medalhas.length} />
+        </div>
+
+        {/* Medals strip */}
+        <MedalsStrip state={state} />
+
         {/* Tabs */}
-        <div className="mb-5 flex gap-2 overflow-x-auto">
+        <div className="mb-5 mt-5 flex gap-2 overflow-x-auto">
           {([
             { id: "alfabeto", label: "Alfabeto" },
             { id: "quiz", label: "Quiz" },
             { id: "sinais", label: "Sinais comuns" },
+            { id: "ranking", label: "Ranking" },
           ] as { id: Tab; label: string }[]).map((t) => (
             <button
               key={t.id}
@@ -96,22 +136,27 @@ function AprenderPage() {
         </div>
 
         {tab === "alfabeto" && <AlphabetBanner />}
-        {tab === "quiz" && <Quiz onAnswer={(ok) => update({
-          acertos: progress.acertos + (ok ? 1 : 0),
-          erros: progress.erros + (ok ? 0 : 1),
-          streak: ok ? progress.streak + 1 : 0,
-          quizzes: progress.quizzes + 1,
-        })} />}
-        {tab === "sinais" && <SignsLibrary
-          learned={progress.learned}
-          onLearned={(slug) => {
-            if (progress.learned.includes(slug)) return;
-            update({ learned: [...progress.learned, slug] });
-          }}
-        />}
+        {tab === "quiz" && <Quiz onAnswer={(ok) => award(ok ? "quiz_acerto" : "quiz_erro")} />}
+        {tab === "sinais" && (
+          <SignsLibrary
+            learned={state.learned}
+            onLearned={(slug) => award("sinal_aprendido", { slug })}
+          />
+        )}
+        {tab === "ranking" && <Ranking state={state} setState={setState} />}
       </section>
     </main>
   );
+}
+
+function fonteLabel(f: Parameters<typeof applyEvent>[1]) {
+  switch (f) {
+    case "quiz_acerto": return "Resposta correta no quiz";
+    case "quiz_erro": return "Tentativa registrada";
+    case "sinal_aprendido": return "Novo sinal aprendido";
+    case "streak_bonus": return "Bônus de sequência";
+    case "primeira_aula": return "Primeira aula concluída";
+  }
 }
 
 function Stat({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number }) {
@@ -123,6 +168,35 @@ function Stat({ icon: Icon, label, value }: { icon: React.ComponentType<{ classN
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className="font-display text-xl font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function MedalsStrip({ state }: { state: GamificationState }) {
+  return (
+    <div className="rounded-3xl border bg-card/70 p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medalhas</p>
+        <p className="text-xs text-muted-foreground">{state.medalhas.length}/{MEDALS.length}</p>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {MEDALS.map((m) => {
+          const unlocked = state.medalhas.includes(m.id);
+          return (
+            <div
+              key={m.id}
+              title={`${m.nome} — ${m.descricao}`}
+              className={`min-w-[110px] rounded-2xl border px-3 py-2 text-center transition ${
+                unlocked ? "border-primary/50 bg-primary/10" : "bg-background/40 opacity-50"
+              }`}
+            >
+              <div className="text-2xl">{m.icone}</div>
+              <p className="mt-1 text-[11px] font-semibold leading-tight">{m.nome}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{m.descricao}</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -144,7 +218,6 @@ function Quiz({ onAnswer }: { onAnswer: (ok: boolean) => void }) {
   const [picked, setPicked] = useState<string | null>(null);
   const next = () => { setQ(pickQuestion()); setPicked(null); };
 
-  // import HandGlyph from AlphabetBanner is internal; render simple letter card
   return (
     <div className="rounded-3xl border bg-card/80 p-6 shadow-card">
       <p className="text-xs font-medium uppercase tracking-wider text-primary">Quiz do alfabeto</p>
@@ -204,7 +277,6 @@ function Quiz({ onAnswer }: { onAnswer: (ok: boolean) => void }) {
 }
 
 function LetterGlyph({ letter }: { letter: string }) {
-  // Reuses AlphabetBanner styling via preview link; simple display fallback
   return (
     <div className="grid h-40 w-40 place-items-center rounded-full bg-primary/10 text-primary">
       <span className="font-display text-7xl font-bold">{letter}</span>
@@ -244,7 +316,6 @@ function SignsLibrary({ learned, onLearned }: { learned: string[]; onLearned: (s
   });
 
   const playerText = selected?.palavra ?? "";
-
   const grid = useMemo(() => signs ?? [], [signs]);
 
   return (
@@ -314,7 +385,7 @@ function SignsLibrary({ learned, onLearned }: { learned: string[]; onLearned: (s
                   onClick={() => onLearned(selected.slug)}
                   className="inline-flex items-center gap-1.5 rounded-full gradient-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-glow"
                 >
-                  <Check className="h-3.5 w-3.5" /> Marcar como aprendido
+                  <Check className="h-3.5 w-3.5" /> Marcar como aprendido (+15 XP)
                 </button>
               </div>
             </div>
@@ -324,6 +395,109 @@ function SignsLibrary({ learned, onLearned }: { learned: string[]; onLearned: (s
 
       <div className="md:col-span-2">
         <VLibrasPlayer text={playerText} hint="Clique em um sinal para ver o avatar VLibras executando." />
+      </div>
+    </div>
+  );
+}
+
+function Ranking({ state, setState }: { state: GamificationState; setState: React.Dispatch<React.SetStateAction<GamificationState>> }) {
+  const [nick, setNick] = useState(state.apelido ?? "");
+  const [syncing, setSyncing] = useState(false);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["ranking_publico"],
+    queryFn: () => fetchLeaderboard(50),
+    refetchOnWindowFocus: false,
+  });
+
+  const handleSync = async () => {
+    const trimmed = nick.trim();
+    if (!/^[A-Za-z0-9_-]{3,20}$/.test(trimmed)) {
+      toast.error("Apelido inválido", { description: "Use 3 a 20 caracteres: letras, números, _ ou -." });
+      return;
+    }
+    setSyncing(true);
+    try {
+      const next = { ...state, apelido: trimmed, rankingSynced: true };
+      saveGam(next);
+      setState(next);
+      await syncRanking(next);
+      toast.success("Pontuação enviada ao ranking nacional!");
+      refetch();
+    } catch (e) {
+      toast.error("Não foi possível enviar", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-5 md:grid-cols-5">
+      <div className="md:col-span-2">
+        <div className="rounded-3xl border bg-card/80 p-5 shadow-card">
+          <p className="text-xs font-medium uppercase tracking-wider text-primary">Sua participação</p>
+          <h3 className="mt-1 font-display text-xl font-bold">Entrar no ranking</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Escolha um apelido público para registrar seu XP no ranking nacional do LibrasLive.
+          </p>
+          <div className="mt-4 space-y-2">
+            <input
+              value={nick}
+              onChange={(e) => setNick(e.target.value)}
+              placeholder="seu_apelido"
+              maxLength={20}
+              className="w-full rounded-full border bg-background/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-60"
+            >
+              {syncing ? "Enviando…" : state.apelido ? "Atualizar pontuação" : "Entrar no ranking"}
+            </button>
+          </div>
+          <div className="mt-4 rounded-2xl border bg-background/40 p-3 text-xs text-muted-foreground">
+            <p>XP atual: <span className="font-semibold text-foreground">{state.xp}</span></p>
+            <p>Nível: <span className="font-semibold text-foreground">{levelFromXp(state.xp)}</span></p>
+            <p>Medalhas: <span className="font-semibold text-foreground">{state.medalhas.length}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div className="md:col-span-3">
+        <div className="rounded-3xl border bg-card/80 p-5 shadow-card">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-display text-xl font-bold">Top do Brasil</h3>
+            <button onClick={() => refetch()} className="text-xs text-muted-foreground hover:text-foreground">Atualizar</button>
+          </div>
+          {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+          {!isLoading && (data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Ainda sem registros — seja o primeiro!</p>
+          )}
+          <ol className="space-y-2">
+            {(data ?? []).map((row, i) => {
+              const isMe = row.apelido === state.apelido;
+              return (
+                <li
+                  key={row.apelido}
+                  className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-sm ${
+                    isMe ? "border-primary bg-primary/10" : "bg-background/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-card font-bold">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold">{row.apelido} {isMe && <span className="text-xs text-primary">(você)</span>}</p>
+                      <p className="text-xs text-muted-foreground">Nível {row.nivel} · 🔥 {row.streak_recorde} · 🏅 {row.medalhas}</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-lg font-bold">{row.xp}<span className="ml-1 text-xs text-muted-foreground">XP</span></span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
       </div>
     </div>
   );
