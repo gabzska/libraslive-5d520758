@@ -275,6 +275,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_publico: {
+        Row: {
+          apelido: string
+          created_at: string
+          id: string
+          medalhas: number
+          nivel: number
+          streak_atual: number
+          streak_recorde: number
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          apelido: string
+          created_at?: string
+          id?: string
+          medalhas?: number
+          nivel?: number
+          streak_atual?: number
+          streak_recorde?: number
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          apelido?: string
+          created_at?: string
+          id?: string
+          medalhas?: number
+          nivel?: number
+          streak_atual?: number
+          streak_recorde?: number
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: []
+      }
       sinais: {
         Row: {
           animacao_url: string | null
