@@ -305,10 +305,47 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         setFps(frameTimesRef.current.length);
 
         if (hands.length) {
-          // Tenta vocabulário; se nenhum candidato, cai para alfabeto manual
+          // Trajetória do pulso (últimos ~500ms)
+          const wrist = hands[0][0];
+          const tNow = performance.now();
+          wristTrailRef.current.push({ x: wrist.x, y: wrist.y, z: wrist.z, at: tNow });
+          wristTrailRef.current = wristTrailRef.current.filter((p) => tNow - p.at < 500);
+          let motion: SignCtx["motion"] = "still";
+          if (wristTrailRef.current.length >= 3) {
+            const first = wristTrailRef.current[0];
+            const last = wristTrailRef.current[wristTrailRef.current.length - 1];
+            const dx = last.x - first.x, dy = last.y - first.y, dz = last.z - first.z;
+            const ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
+            const THR = 0.04;
+            if (Math.max(ax, ay, az) > THR) {
+              if (ax >= ay && ax >= az) motion = dx > 0 ? "right" : "left";
+              else if (ay >= az) motion = dy > 0 ? "down" : "up";
+              else motion = dz > 0 ? "back" : "forward";
+            }
+          }
+          // Orientação da palma
+          const palmFacing = palmOrientation(hands[0]);
+          // Expressão facial (sobrancelhas, boca) — landmarks padrão do MediaPipe
+          let browRaised = false, mouthOpen = false;
+          const face = res.faceLandmarks as LM[] | undefined;
+          if (face && face.length > 400) {
+            // distância sobrancelha esquerda (70) → olho (159), normalizada pela altura do rosto
+            const faceH = Math.abs(face[10].y - face[152].y) || 1;
+            const browGap = Math.abs(face[70].y - face[159].y) / faceH;
+            browRaised = browGap > 0.085;
+            const mouthGap = Math.abs(face[13].y - face[14].y) / faceH;
+            mouthOpen = mouthGap > 0.05;
+          }
+
           const r =
-            recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null }) ??
+            recognize({
+              hands, handedness,
+              pose: res.poseLandmarks ?? null,
+              face: res.faceLandmarks ?? null,
+              palmFacing, motion, browRaised, mouthOpen,
+            }) ??
             recognizeLetter(hands[0]);
+
 
           if (r) {
             // Voto temporal: mantém últimos 5 frames, exige maioria para emitir
