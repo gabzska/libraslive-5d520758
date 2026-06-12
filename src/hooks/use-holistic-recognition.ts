@@ -90,12 +90,34 @@ function recognizeLetter(hand: LM[]): { gloss: string; confidence: number } | nu
   return null;
 }
 
-/* ---------------- Vocabulary (heurística expandida) ---------------- */
+/* ---------------- Vocabulary (heurística expandida) ----------------
+ * Usa orientação da palma + trajetória do pulso + expressão facial para
+ * desambiguar sinais visualmente parecidos (EU/VOCÊ, OLÁ/TCHAU, FUTURO/PASSADO).
+ */
 interface SignCtx {
   hands: LM[][];
   handedness: string[];
   pose: LM[] | null;
   face: LM[] | null;
+  palmFacing: "in" | "out" | "up" | "down";
+  motion: "still" | "left" | "right" | "up" | "down" | "forward" | "back";
+  browRaised: boolean;
+  mouthOpen: boolean;
+}
+
+/** Orientação da palma via produto vetorial pulso→indicador × pulso→mindinho. */
+function palmOrientation(h: LM[]): SignCtx["palmFacing"] {
+  const a = { x: h[5].x - h[0].x, y: h[5].y - h[0].y, z: h[5].z - h[0].z };
+  const b = { x: h[17].x - h[0].x, y: h[17].y - h[0].y, z: h[17].z - h[0].z };
+  const n = {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x,
+  };
+  const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
+  if (az >= ax && az >= ay) return n.z > 0 ? "in" : "out";
+  if (ay >= ax) return n.y > 0 ? "down" : "up";
+  return n.x > 0 ? "in" : "out";
 }
 
 function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
@@ -104,57 +126,76 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
   const ext = fingersExtended(h);
   const [thumb, idx, mid, ring, pinky] = ext;
   const up = ext.filter(Boolean).length;
-  const palmUp = h[0].y > h[9].y;
+  const palmUp = c.palmFacing === "up";
+  const palmIn = c.palmFacing === "in";
+  const palmOut = c.palmFacing === "out";
 
   const chin = c.pose?.[10] ?? c.pose?.[0] ?? null;
   const handNearMouth = chin ? dist(h[9], chin) < 0.18 : false;
   const handHigh = h[9].y < 0.35;
   const handLow = h[9].y > 0.7;
+  const movingSide = c.motion === "left" || c.motion === "right";
+  const still = c.motion === "still";
 
   const cands: { gloss: string; confidence: number }[] = [];
 
-  // Saudações / cortesias
-  if (up >= 4 && palmUp && handHigh) cands.push({ gloss: "OLÁ", confidence: 0.9 });
-  if (up >= 4 && palmUp && handNearMouth) cands.push({ gloss: "OBRIGADO", confidence: 0.86 });
-  if (up >= 4 && !palmUp && handHigh) cands.push({ gloss: "TCHAU", confidence: 0.78 });
-  if (up >= 4 && palmUp && handLow) cands.push({ gloss: "POR-FAVOR", confidence: 0.7 });
+  // Saudações: OLÁ/TCHAU exigem aceno lateral
+  if (up >= 4 && palmOut && handHigh) cands.push({ gloss: "OLÁ", confidence: movingSide ? 0.95 : 0.7 });
+  if (up >= 4 && handNearMouth && c.motion === "forward") cands.push({ gloss: "OBRIGADO", confidence: 0.9 });
+  if (up >= 4 && palmIn && handHigh && movingSide) cands.push({ gloss: "TCHAU", confidence: 0.86 });
+  if (up >= 4 && palmUp && handLow) cands.push({ gloss: "POR-FAVOR", confidence: 0.72 });
 
-  // Afirmações / negações
-  if (idx && mid && !ring && !pinky && !thumb) cands.push({ gloss: "NÃO", confidence: 0.82 });
-  if (thumb && !idx && !mid && !ring && !pinky) cands.push({ gloss: "TUDO-BEM", confidence: 0.83 });
+  if (idx && mid && !ring && !pinky && !thumb) cands.push({ gloss: "NÃO", confidence: movingSide ? 0.9 : 0.76 });
+  if (thumb && !idx && !mid && !ring && !pinky) cands.push({ gloss: "TUDO-BEM", confidence: 0.85 });
 
-  // Pronomes
-  if (idx && !mid && !ring && !pinky && !thumb && h[8].z < -0.02) cands.push({ gloss: "EU", confidence: 0.82 });
-  if (idx && !mid && !ring && !pinky && !thumb && h[8].z > 0.02) cands.push({ gloss: "VOCÊ", confidence: 0.8 });
-  if (c.hands.length > 1 && idx && !mid && !ring && !pinky) cands.push({ gloss: "NÓS", confidence: 0.7 });
+  // Pronomes desambiguados por orientação da palma
+  if (idx && !mid && !ring && !pinky && !thumb && palmIn) cands.push({ gloss: "EU", confidence: 0.92 });
+  if (idx && !mid && !ring && !pinky && !thumb && palmOut) cands.push({ gloss: "VOCÊ", confidence: 0.9 });
+  if (c.hands.length > 1 && idx && !mid && !ring && !pinky && !still) cands.push({ gloss: "NÓS", confidence: 0.74 });
 
-  // Sentimentos / verbos / lugares — mantidos
   if (thumb && idx && !mid && !ring && pinky) cands.push({ gloss: "AMOR", confidence: 0.9 });
   if (idx && mid && !ring && !pinky && thumb) cands.push({ gloss: "PAZ", confidence: 0.78 });
-  if (up >= 4 && palmUp && handHigh && c.hands.length > 1) cands.push({ gloss: "FELIZ", confidence: 0.74 });
-  if (up <= 1 && handLow) cands.push({ gloss: "TRISTE", confidence: 0.7 });
-  if (up >= 4 && handNearMouth && !palmUp) cands.push({ gloss: "COMER", confidence: 0.78 });
-  if (thumb && pinky && !idx && !mid && !ring && handNearMouth) cands.push({ gloss: "BEBER", confidence: 0.78 });
-  if (idx && mid && ring && !pinky && handNearMouth) cands.push({ gloss: "FALAR", confidence: 0.72 });
+  if (up >= 4 && palmUp && handHigh && c.hands.length > 1) cands.push({ gloss: "FELIZ", confidence: 0.76 });
+  if (up <= 1 && handLow) cands.push({ gloss: "TRISTE", confidence: 0.72 });
+  if (up >= 4 && handNearMouth && !palmOut) cands.push({ gloss: "COMER", confidence: 0.8 });
+  if (thumb && pinky && !idx && !mid && !ring && handNearMouth) cands.push({ gloss: "BEBER", confidence: 0.8 });
+  if (idx && mid && ring && !pinky && handNearMouth) cands.push({ gloss: "FALAR", confidence: 0.74 });
   if (up >= 4 && c.hands.length > 1 && palmUp) cands.push({ gloss: "GOSTAR", confidence: 0.7 });
-  if (idx && !mid && !ring && !pinky && handHigh) cands.push({ gloss: "PENSAR", confidence: 0.7 });
-  if (up >= 4 && c.hands.length > 1 && !palmUp) cands.push({ gloss: "ESTUDAR", confidence: 0.7 });
+  if (idx && !mid && !ring && !pinky && handHigh) cands.push({ gloss: "PENSAR", confidence: 0.72 });
+  if (up >= 4 && c.hands.length > 1 && !palmOut) cands.push({ gloss: "ESTUDAR", confidence: 0.7 });
   if (idx && mid && !ring && !pinky && c.hands.length > 1) cands.push({ gloss: "TRABALHAR", confidence: 0.68 });
   if (up >= 3 && c.hands.length > 1 && handHigh) cands.push({ gloss: "APRENDER", confidence: 0.66 });
-  if (idx && !mid && !ring && !pinky && h[8].x > 0.6) cands.push({ gloss: "FUTURO", confidence: 0.7 });
-  if (idx && !mid && !ring && !pinky && h[8].x < 0.4) cands.push({ gloss: "PASSADO", confidence: 0.7 });
-  if (up >= 4 && palmUp && Math.abs(h[9].y - 0.5) < 0.1) cands.push({ gloss: "HOJE", confidence: 0.65 });
+
+  // Tempo desambiguado por trajetória
+  if (idx && !mid && !ring && !pinky && c.motion === "forward") cands.push({ gloss: "FUTURO", confidence: 0.84 });
+  if (idx && !mid && !ring && !pinky && c.motion === "back") cands.push({ gloss: "PASSADO", confidence: 0.84 });
+  if (up >= 4 && palmUp && Math.abs(h[9].y - 0.5) < 0.1 && still) cands.push({ gloss: "HOJE", confidence: 0.7 });
+
   if (up >= 4 && c.hands.length > 1 && handHigh && palmUp) cands.push({ gloss: "CASA", confidence: 0.66 });
-  if (idx && mid && ring && pinky && !thumb && c.hands.length > 1) cands.push({ gloss: "ESCOLA", confidence: 0.64 });
-  if (idx && mid && ring && pinky && !thumb && handNearMouth) cands.push({ gloss: "MEDICINA", confidence: 0.62 });
+  if (idx && mid && ring && pinky && !thumb && c.hands.length > 1) cands.push({ gloss: "ESCOLA", confidence: 0.66 });
+  if (idx && mid && ring && pinky && !thumb && handNearMouth) cands.push({ gloss: "MEDICINA", confidence: 0.64 });
   if (idx && !mid && !ring && !pinky && handLow) cands.push({ gloss: "ÁGUA", confidence: 0.65 });
-  if (c.hands.length > 1 && dist(c.hands[0][9], c.hands[1][9]) < 0.1) cands.push({ gloss: "O-QUE", confidence: 0.6 });
+
+  // Perguntas: sobrancelha levantada dá grande boost
+  if (c.hands.length > 1 && dist(c.hands[0][9], c.hands[1][9]) < 0.1) {
+    cands.push({ gloss: "O-QUE", confidence: c.browRaised ? 0.9 : 0.6 });
+  }
 
   if (!cands.length) return null;
   cands.sort((a, b) => b.confidence - a.confidence);
   const top = cands[0];
-  if (c.handedness.length > 1) top.confidence = Math.min(1, top.confidence + 0.05);
+
+  if (c.handedness.length > 1) top.confidence = Math.min(1, top.confidence + 0.04);
   if (c.face && c.face.length) top.confidence = Math.min(1, top.confidence + 0.03);
+  if (c.browRaised && /^(O-QUE|COMO|POR-QUE|QUANDO)$/.test(top.gloss)) {
+    top.confidence = Math.min(1, top.confidence + 0.06);
+  }
+  if (c.mouthOpen && top.gloss === "NÃO") top.confidence = Math.min(1, top.confidence + 0.05);
+
+  // Penalidade por ambiguidade: 2º candidato muito próximo reduz confiança
+  if (cands[1] && cands[1].confidence > top.confidence - 0.05) {
+    top.confidence = Math.max(0.3, top.confidence - 0.1);
+  }
   return top;
 }
 
@@ -179,6 +220,7 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
   const onGlossRef = useRef(onGloss);
   const frameTimesRef = useRef<number[]>([]);
   const brightSampleRef = useRef<{ at: number; v: number }>({ at: 0, v: 1 });
+  const wristTrailRef = useRef<{ x: number; y: number; z: number; at: number }[]>([]);
   onGlossRef.current = onGloss;
 
   const stop = useCallback(() => {
@@ -263,10 +305,47 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         setFps(frameTimesRef.current.length);
 
         if (hands.length) {
-          // Tenta vocabulário; se nenhum candidato, cai para alfabeto manual
+          // Trajetória do pulso (últimos ~500ms)
+          const wrist = hands[0][0];
+          const tNow = performance.now();
+          wristTrailRef.current.push({ x: wrist.x, y: wrist.y, z: wrist.z, at: tNow });
+          wristTrailRef.current = wristTrailRef.current.filter((p) => tNow - p.at < 500);
+          let motion: SignCtx["motion"] = "still";
+          if (wristTrailRef.current.length >= 3) {
+            const first = wristTrailRef.current[0];
+            const last = wristTrailRef.current[wristTrailRef.current.length - 1];
+            const dx = last.x - first.x, dy = last.y - first.y, dz = last.z - first.z;
+            const ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
+            const THR = 0.04;
+            if (Math.max(ax, ay, az) > THR) {
+              if (ax >= ay && ax >= az) motion = dx > 0 ? "right" : "left";
+              else if (ay >= az) motion = dy > 0 ? "down" : "up";
+              else motion = dz > 0 ? "back" : "forward";
+            }
+          }
+          // Orientação da palma
+          const palmFacing = palmOrientation(hands[0]);
+          // Expressão facial (sobrancelhas, boca) — landmarks padrão do MediaPipe
+          let browRaised = false, mouthOpen = false;
+          const face = res.faceLandmarks as LM[] | undefined;
+          if (face && face.length > 400) {
+            // distância sobrancelha esquerda (70) → olho (159), normalizada pela altura do rosto
+            const faceH = Math.abs(face[10].y - face[152].y) || 1;
+            const browGap = Math.abs(face[70].y - face[159].y) / faceH;
+            browRaised = browGap > 0.085;
+            const mouthGap = Math.abs(face[13].y - face[14].y) / faceH;
+            mouthOpen = mouthGap > 0.05;
+          }
+
           const r =
-            recognize({ hands, handedness, pose: res.poseLandmarks ?? null, face: res.faceLandmarks ?? null }) ??
+            recognize({
+              hands, handedness,
+              pose: res.poseLandmarks ?? null,
+              face: res.faceLandmarks ?? null,
+              palmFacing, motion, browRaised, mouthOpen,
+            }) ??
             recognizeLetter(hands[0]);
+
 
           if (r) {
             // Voto temporal: mantém últimos 5 frames, exige maioria para emitir
