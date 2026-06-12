@@ -220,6 +220,7 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
   const onGlossRef = useRef(onGloss);
   const frameTimesRef = useRef<number[]>([]);
   const brightSampleRef = useRef<{ at: number; v: number }>({ at: 0, v: 1 });
+  const wristTrailRef = useRef<{ x: number; y: number; z: number; at: number }[]>([]);
   onGlossRef.current = onGloss;
 
   const stop = useCallback(() => {
