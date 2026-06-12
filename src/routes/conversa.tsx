@@ -321,8 +321,46 @@ function Conversa() {
         </div>
       </section>
 
+      {/* CONFIANÇA EM DESTAQUE — última tradução de Libras */}
+      {(() => {
+        const last = transcript.find((e) => e.from === "sign");
+        if (!last) return null;
+        const pct = Math.round((last.confidence ?? 0) * 100);
+        const tone = pct >= 80 ? "text-emerald-500" : pct >= 55 ? "text-amber-500" : "text-destructive";
+        const bar = pct >= 80 ? "bg-emerald-500" : pct >= 55 ? "bg-amber-500" : "bg-destructive";
+        return (
+          <section className="mx-auto max-w-7xl px-5 pb-8">
+            <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-6 shadow-card backdrop-blur sm:p-8">
+              <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
+              <div className="relative grid items-center gap-6 sm:grid-cols-[1fr_auto]">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-primary">Tradução identificada</p>
+                  <p className="mt-2 break-words font-display text-2xl font-semibold leading-tight sm:text-3xl">
+                    "{last.text}"
+                  </p>
+                  {last.glosses?.length ? (
+                    <p className="mt-2 text-xs text-muted-foreground">Glosas: {last.glosses.join(" · ")}</p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col items-center gap-2 sm:items-end">
+                  <div className="flex items-baseline gap-1">
+                    <span className={`font-display text-5xl font-bold tabular-nums sm:text-6xl ${tone}`}>{pct}</span>
+                    <span className={`text-xl font-semibold ${tone}`}>%</span>
+                  </div>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Confiança</p>
+                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+                    <div className={`h-full ${bar} transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
       {/* TRANSCRIPT */}
       <section className="mx-auto max-w-7xl px-5 pb-16">
+
         <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur">
           <div className="flex items-center justify-between">
             <div>
