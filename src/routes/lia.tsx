@@ -75,7 +75,7 @@ function LiaPage() {
         <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur md:p-10">
           <div className="grid gap-8 md:grid-cols-[1fr,1.2fr] md:items-center">
             <div className="flex flex-col items-center gap-6">
-              <LiaInterpreter size="xl" message={bubble} showBubble />
+              <LiaInterpreter size="xl" variant="portrait" message={bubble} showBubble bubbleSide="bottom" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-primary">Experimente</p>
