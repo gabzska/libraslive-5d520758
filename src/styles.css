@@ -129,3 +129,17 @@
   50%      { transform: translateY(-6px); }
 }
 @utility float-soft { animation: float-soft 4s ease-in-out infinite; }
+
+/* === Lia mascot animations === */
+@keyframes lia-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.025); }
+}
+@keyframes lia-sign {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-3px) rotate(1deg); }
+}
+@keyframes lia-blink {
+  0%, 92%, 100% { opacity: 0; }
+  94%, 96%      { opacity: 0.35; }
+}
