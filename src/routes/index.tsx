@@ -58,13 +58,14 @@ const MODULES = [
     cta: "Abrir modo hospital",
   },
   {
-    to: "/aprender" as const,
+    to: "/biblioteca" as const,
     icon: Library,
     tag: "Módulo 2 · Biblioteca",
     title: "Biblioteca de sinais",
-    desc: "Banco colaborativo com busca por palavra, categoria e o alfabeto manual completo.",
+    desc: "Banco colaborativo com busca por palavra, categoria, sinônimos e vídeo de demonstração.",
     cta: "Pesquisar sinais",
   },
+
 ] as const;
 
 function Index() {
