@@ -211,7 +211,33 @@ function Conversa() {
             {sign.current && (
               <div className="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1.5 text-xs text-white backdrop-blur">
                 <span className="font-medium">{sign.current.gloss}</span>
-                <span className="ml-2 text-white/70">{Math.round(sign.current.confidence * 100)}%</span>
+                <span className={`ml-2 ${sign.current.confidence >= 0.8 ? "text-emerald-300" : "text-amber-300"}`}>
+                  {Math.round(sign.current.confidence * 100)}%
+                </span>
+              </div>
+            )}
+            {sign.active && (
+              <div className="absolute right-3 bottom-3 flex flex-col items-end gap-1.5">
+                <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] backdrop-blur ${sign.quality.handsDetected ? "bg-emerald-500/80 text-white" : "bg-black/55 text-white/80"}`}>
+                  <Hand className="h-3 w-3" />
+                  {sign.quality.handsDetected ? `${sign.quality.handsDetected} mão${sign.quality.handsDetected > 1 ? "s" : ""} detectada${sign.quality.handsDetected > 1 ? "s" : ""}` : "Sem mãos"}
+                </div>
+                {!sign.quality.lightOk && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/85 px-2.5 py-1 text-[11px] text-white backdrop-blur">
+                    <Sun className="h-3 w-3" /> Iluminação baixa
+                  </div>
+                )}
+                {sign.quality.handsDetected > 0 && !sign.quality.inFrame && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/85 px-2.5 py-1 text-[11px] text-white backdrop-blur">
+                    Mãos saindo do quadro
+                  </div>
+                )}
+              </div>
+            )}
+            {sign.active && sign.quality.unrecognized && (
+              <div className="absolute left-3 right-3 top-12 mx-auto max-w-md rounded-2xl bg-destructive/90 px-3 py-2 text-center text-xs text-destructive-foreground backdrop-blur">
+                Sinal não reconhecido {sign.current ? `(${Math.round(sign.current.confidence * 100)}% < 80%)` : ""}
+                {sign.quality.tip && <div className="mt-0.5 opacity-90">{sign.quality.tip}</div>}
               </div>
             )}
             {translating && (
@@ -220,6 +246,7 @@ function Conversa() {
               </div>
             )}
           </div>
+
 
           {/* Buffer de glosas */}
           <div className="mt-3 min-h-[40px] rounded-2xl border bg-background/60 px-3 py-2">

@@ -13,6 +13,7 @@ import { Route as TraduzirRouteImport } from './routes/traduzir'
 import { Route as HospitalRouteImport } from './routes/hospital'
 import { Route as EducacaoRouteImport } from './routes/educacao'
 import { Route as ConversaRouteImport } from './routes/conversa'
+import { Route as BibliotecaRouteImport } from './routes/biblioteca'
 import { Route as AprenderRouteImport } from './routes/aprender'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
@@ -39,6 +40,11 @@ const EducacaoRoute = EducacaoRouteImport.update({
 const ConversaRoute = ConversaRouteImport.update({
   id: '/conversa',
   path: '/conversa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BibliotecaRoute = BibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AprenderRoute = AprenderRouteImport.update({
@@ -81,6 +87,7 @@ const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
+  '/biblioteca': typeof BibliotecaRoute
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
+  '/biblioteca': typeof BibliotecaRoute
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
+  '/biblioteca': typeof BibliotecaRoute
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/aprender'
+    | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/aprender'
+    | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/aprender'
+    | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AprenderRoute: typeof AprenderRoute
+  BibliotecaRoute: typeof BibliotecaRoute
   ConversaRoute: typeof ConversaRoute
   EducacaoRoute: typeof EducacaoRouteWithChildren
   HospitalRoute: typeof HospitalRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/conversa'
       fullPath: '/conversa'
       preLoaderRoute: typeof ConversaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/biblioteca': {
+      id: '/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof BibliotecaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aprender': {
@@ -270,6 +290,7 @@ const EducacaoRouteWithChildren = EducacaoRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AprenderRoute: AprenderRoute,
+  BibliotecaRoute: BibliotecaRoute,
   ConversaRoute: ConversaRoute,
   EducacaoRoute: EducacaoRouteWithChildren,
   HospitalRoute: HospitalRoute,

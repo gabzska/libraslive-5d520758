@@ -6,10 +6,12 @@ const LINKS = [
   { to: "/", label: "Início" },
   { to: "/conversa", label: "Conversa" },
   { to: "/traduzir", label: "Traduzir" },
+  { to: "/biblioteca", label: "Biblioteca" },
   { to: "/aprender", label: "Aprender" },
   { to: "/educacao", label: "Educação" },
   { to: "/hospital", label: "Hospital" },
 ] as const;
+
 
 export function AppNav() {
   const [dark, setDark] = useState(false);
