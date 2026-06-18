@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TraduzirRouteImport } from './routes/traduzir'
+import { Route as LiaRouteImport } from './routes/lia'
 import { Route as HospitalRouteImport } from './routes/hospital'
 import { Route as EducacaoRouteImport } from './routes/educacao'
 import { Route as ConversaRouteImport } from './routes/conversa'
@@ -25,6 +26,11 @@ import { Route as ApiPublicAulasRouteImport } from './routes/api/public/aulas'
 const TraduzirRoute = TraduzirRouteImport.update({
   id: '/traduzir',
   path: '/traduzir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiaRoute = LiaRouteImport.update({
+  id: '/lia',
+  path: '/lia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HospitalRoute = HospitalRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
+  '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
+  '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
+  '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/conversa'
     | '/educacao'
     | '/hospital'
+    | '/lia'
     | '/traduzir'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/conversa'
     | '/educacao'
     | '/hospital'
+    | '/lia'
     | '/traduzir'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/conversa'
     | '/educacao'
     | '/hospital'
+    | '/lia'
     | '/traduzir'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   ConversaRoute: typeof ConversaRoute
   EducacaoRoute: typeof EducacaoRouteWithChildren
   HospitalRoute: typeof HospitalRoute
+  LiaRoute: typeof LiaRoute
   TraduzirRoute: typeof TraduzirRoute
   ApiPublicAulasRoute: typeof ApiPublicAulasRoute
   ApiPublicHospitalPhrasesRoute: typeof ApiPublicHospitalPhrasesRoute
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/traduzir'
       fullPath: '/traduzir'
       preLoaderRoute: typeof TraduzirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lia': {
+      id: '/lia'
+      path: '/lia'
+      fullPath: '/lia'
+      preLoaderRoute: typeof LiaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hospital': {
@@ -294,6 +314,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConversaRoute: ConversaRoute,
   EducacaoRoute: EducacaoRouteWithChildren,
   HospitalRoute: HospitalRoute,
+  LiaRoute: LiaRoute,
   TraduzirRoute: TraduzirRoute,
   ApiPublicAulasRoute: ApiPublicAulasRoute,
   ApiPublicHospitalPhrasesRoute: ApiPublicHospitalPhrasesRoute,
@@ -303,13 +324,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

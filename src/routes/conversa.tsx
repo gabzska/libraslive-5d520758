@@ -11,6 +11,8 @@ import { translateToVLibras } from "@/lib/vlibras";
 import { speak } from "@/lib/tts";
 import { reconstructSentence } from "@/lib/libras.functions";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
+import { LiaInterpreter } from "@/components/LiaInterpreter";
+import { playSign, type LiaState } from "@/lib/lia-sign-library";
 
 export const Route = createFileRoute("/conversa")({
   head: () => ({
@@ -93,6 +95,8 @@ function Conversa() {
         confidence: out.confidence, alternatives: out.alternatives, at: Date.now(),
       };
       setTranscript((t) => [entry, ...t].slice(0, 60));
+      // A Lia "fala" a frase reconstruída
+      void playSign(glosses[0] ?? "OLÁ", { text: out.sentence });
       if (autoSpeak) speak(out.sentence);
     } catch (e: any) {
       const entry: Entry = {
@@ -162,13 +166,22 @@ function Conversa() {
       </header>
 
       <section className="mx-auto max-w-7xl px-5 pb-8">
-        <h1 className="text-balance text-center text-3xl font-bold sm:text-4xl">
-          Libras → <span className="bg-gradient-to-r from-[oklch(0.62_0.21_295)] to-[oklch(0.72_0.18_280)] bg-clip-text text-transparent">Português natural</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground">
-          A câmera captura mãos, expressões e postura. Os sinais formam glosas; um modelo de linguagem
-          reconstrói a frase em português brasileiro com contexto, gramática e pontuação.
-        </p>
+        <div className="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-8">
+          <LiaInterpreter
+            size="lg"
+            state={(translating ? "thinking" : voice.listening ? "listening" : sign.active ? "listening" : "idle") as LiaState}
+            showBubble={false}
+          />
+          <div className="text-center md:text-left">
+            <h1 className="text-balance text-3xl font-bold sm:text-4xl">
+              Libras → <span className="bg-gradient-to-r from-[oklch(0.62_0.21_295)] to-[oklch(0.72_0.18_280)] bg-clip-text text-transparent">Português natural</span>
+            </h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:mx-0">
+              A Lia captura mãos, expressões e postura. Os sinais formam glosas; uma IA contextual
+              reconstrói a frase em português brasileiro com gramática e pontuação.
+            </p>
+          </div>
+        </div>
       </section>
 
       {(() => {
