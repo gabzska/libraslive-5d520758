@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Hand, Mic, Languages, GraduationCap, Stethoscope, BookOpen, Library, ArrowRight, Code2 } from "lucide-react";
+import { Sparkles, Hand, Mic, Languages, GraduationCap, Stethoscope, BookOpen, Library, ArrowRight, Code2, Heart } from "lucide-react";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
 import { AppNav } from "@/components/AppNav";
+import { LiaInterpreter } from "@/components/LiaInterpreter";
+import liaAsset from "@/assets/lia-mascot.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
