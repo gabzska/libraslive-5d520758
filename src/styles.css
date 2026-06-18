@@ -130,16 +130,27 @@
 }
 @utility float-soft { animation: float-soft 4s ease-in-out infinite; }
 
-/* === Lia mascot animations === */
+/* === Lia avatar — intérprete virtual realista === */
 @keyframes lia-breathe {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.025); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.012); }
+}
+@keyframes lia-sway {
+  0%, 100% { transform: rotate(-0.8deg) translateX(0); }
+  50%      { transform: rotate(0.8deg) translateX(2px); }
 }
 @keyframes lia-sign {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50%      { transform: translateY(-3px) rotate(1deg); }
+  0%   { transform: translateY(0) rotate(-1.2deg); }
+  25%  { transform: translateY(-4px) rotate(1deg); }
+  50%  { transform: translateY(-2px) rotate(-0.6deg); }
+  75%  { transform: translateY(-5px) rotate(1.4deg); }
+  100% { transform: translateY(0) rotate(-1.2deg); }
 }
 @keyframes lia-blink {
-  0%, 92%, 100% { opacity: 0; }
-  94%, 96%      { opacity: 0.35; }
+  0%, 93%, 100% { opacity: 0; }
+  95%, 97%      { opacity: 0.5; }
+}
+@keyframes lia-halo {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.06); }
 }
