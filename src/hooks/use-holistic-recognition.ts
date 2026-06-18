@@ -200,6 +200,18 @@ function recognize(c: SignCtx): { gloss: string; confidence: number } | null {
 }
 
 
+export interface RecognitionQuality {
+  handsDetected: 0 | 1 | 2;
+  lightOk: boolean;
+  inFrame: boolean;
+  brightness: number; // 0..1
+  unrecognized: boolean; // true quando há mãos mas confiança < 80%
+  tip: string | null;
+}
+
+const EMIT_MIN_CONFIDENCE = 0.8; // limiar exigido para emitir tradução
+const DISPLAY_MIN_CONFIDENCE = 0.8; // limiar para considerar reconhecido na UI
+
 interface UseHolistic {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -213,14 +225,20 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<GlossEvent | null>(null);
   const [fps, setFps] = useState(0);
+  const [quality, setQuality] = useState<RecognitionQuality>({
+    handsDetected: 0, lightOk: true, inFrame: true, brightness: 1,
+    unrecognized: false, tip: null,
+  });
   const holisticRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
+  const inFlightRef = useRef(false); // evita enfileirar frames
   const lastEmitRef = useRef<{ gloss: string; at: number }>({ gloss: "", at: 0 });
-  const voteRef = useRef<{ gloss: string; confidence: number }[]>([]); // janela temporal
+  const voteRef = useRef<{ gloss: string; confidence: number }[]>([]);
   const onGlossRef = useRef(onGloss);
   const frameTimesRef = useRef<number[]>([]);
   const brightSampleRef = useRef<{ at: number; v: number }>({ at: 0, v: 1 });
   const wristTrailRef = useRef<{ x: number; y: number; z: number; at: number }[]>([]);
+  const lastSigRef = useRef<string>(""); // hash dos landmarks p/ pular frames idênticos
   onGlossRef.current = onGloss;
 
   const stop = useCallback(() => {
@@ -230,6 +248,8 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
     stream?.getTracks().forEach((t) => t.stop());
     if (v) v.srcObject = null;
     setActive(false); setCurrent(null);
+    setQuality({ handsDetected: 0, lightOk: true, inFrame: true, brightness: 1, unrecognized: false, tip: null });
+    voteRef.current = []; wristTrailRef.current = []; lastSigRef.current = "";
   }, [videoRef]);
 
   const start = useCallback(async () => {
@@ -248,8 +268,8 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         modelComplexity: 1,
         smoothLandmarks: true,
         refineFaceLandmarks: false,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
         selfieMode: true,
       });
 
@@ -262,7 +282,6 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-        // Boost adaptativo: amostra brilho a cada 500ms; quanto mais escuro, mais forte o filtro
         if (lowLightBoost) {
           const now0 = performance.now();
           if (now0 - brightSampleRef.current.at > 500) {
@@ -275,7 +294,7 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
               brightSampleRef.current = { at: now0, v: s / (d.length / 4) / 255 };
             } catch { /* ignore */ }
           }
-          const v = brightSampleRef.current.v; // 0=escuro 1=claro
+          const v = brightSampleRef.current.v;
           const b = v < 0.35 ? 1.45 : v < 0.55 ? 1.25 : 1.1;
           const c0 = v < 0.35 ? 1.35 : v < 0.55 ? 1.2 : 1.08;
           ctx.filter = `brightness(${b}) contrast(${c0}) saturate(1.05)`;
@@ -295,93 +314,124 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
         if (res.poseLandmarks) {
           w.drawConnectors?.(ctx, res.poseLandmarks, w.POSE_CONNECTIONS, { color: "#A78BFA80", lineWidth: 2 });
         }
-        if (res.faceLandmarks) {
-          w.drawConnectors?.(ctx, res.faceLandmarks, w.FACEMESH_TESSELATION, { color: "#DDD6FE40", lineWidth: 0.5 });
-        }
 
         const now = performance.now();
         frameTimesRef.current.push(now);
         frameTimesRef.current = frameTimesRef.current.filter((t) => now - t < 1000);
         setFps(frameTimesRef.current.length);
 
+        // ----- Avaliação de qualidade -----
+        const brightness = brightSampleRef.current.v;
+        const lightOk = brightness >= 0.28;
+        let inFrame = true;
         if (hands.length) {
-          // Trajetória do pulso (últimos ~500ms)
-          const wrist = hands[0][0];
-          const tNow = performance.now();
-          wristTrailRef.current.push({ x: wrist.x, y: wrist.y, z: wrist.z, at: tNow });
-          wristTrailRef.current = wristTrailRef.current.filter((p) => tNow - p.at < 500);
-          let motion: SignCtx["motion"] = "still";
-          if (wristTrailRef.current.length >= 3) {
-            const first = wristTrailRef.current[0];
-            const last = wristTrailRef.current[wristTrailRef.current.length - 1];
-            const dx = last.x - first.x, dy = last.y - first.y, dz = last.z - first.z;
-            const ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
-            const THR = 0.04;
-            if (Math.max(ax, ay, az) > THR) {
-              if (ax >= ay && ax >= az) motion = dx > 0 ? "right" : "left";
-              else if (ay >= az) motion = dy > 0 ? "down" : "up";
-              else motion = dz > 0 ? "back" : "forward";
-            }
+          const allLm = hands.flat();
+          inFrame = allLm.every((p) => p.x > 0.02 && p.x < 0.98 && p.y > 0.02 && p.y < 0.98);
+        }
+        const handsDetected = Math.min(2, hands.length) as 0 | 1 | 2;
+
+        if (!hands.length) {
+          voteRef.current = []; wristTrailRef.current = [];
+          setCurrent(null);
+          setQuality({
+            handsDetected: 0, lightOk, inFrame: true, brightness,
+            unrecognized: false,
+            tip: !lightOk ? "Iluminação baixa — aproxime-se de uma fonte de luz."
+                          : "Mostre as mãos no enquadramento para iniciar a tradução.",
+          });
+          ctx.restore();
+          return;
+        }
+
+        // Pula frame se landmarks praticamente idênticos ao anterior (reduz CPU)
+        const sig = hands.map((h) => `${h[0].x.toFixed(2)},${h[0].y.toFixed(2)},${h[8].x.toFixed(2)},${h[8].y.toFixed(2)}`).join("|");
+        const duplicate = sig === lastSigRef.current;
+        lastSigRef.current = sig;
+
+        // Trajetória do pulso
+        const wrist = hands[0][0];
+        wristTrailRef.current.push({ x: wrist.x, y: wrist.y, z: wrist.z, at: now });
+        wristTrailRef.current = wristTrailRef.current.filter((p) => now - p.at < 500);
+        let motion: SignCtx["motion"] = "still";
+        if (wristTrailRef.current.length >= 3) {
+          const first = wristTrailRef.current[0];
+          const last = wristTrailRef.current[wristTrailRef.current.length - 1];
+          const dx = last.x - first.x, dy = last.y - first.y, dz = last.z - first.z;
+          const ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
+          const THR = 0.04;
+          if (Math.max(ax, ay, az) > THR) {
+            if (ax >= ay && ax >= az) motion = dx > 0 ? "right" : "left";
+            else if (ay >= az) motion = dy > 0 ? "down" : "up";
+            else motion = dz > 0 ? "back" : "forward";
           }
-          // Orientação da palma
-          const palmFacing = palmOrientation(hands[0]);
-          // Expressão facial (sobrancelhas, boca) — landmarks padrão do MediaPipe
-          let browRaised = false, mouthOpen = false;
-          const face = res.faceLandmarks as LM[] | undefined;
-          if (face && face.length > 400) {
-            // distância sobrancelha esquerda (70) → olho (159), normalizada pela altura do rosto
-            const faceH = Math.abs(face[10].y - face[152].y) || 1;
-            const browGap = Math.abs(face[70].y - face[159].y) / faceH;
-            browRaised = browGap > 0.085;
-            const mouthGap = Math.abs(face[13].y - face[14].y) / faceH;
-            mouthOpen = mouthGap > 0.05;
+        }
+
+        const palmFacing = palmOrientation(hands[0]);
+        let browRaised = false, mouthOpen = false;
+        const face = res.faceLandmarks as LM[] | undefined;
+        if (face && face.length > 400) {
+          const faceH = Math.abs(face[10].y - face[152].y) || 1;
+          const browGap = Math.abs(face[70].y - face[159].y) / faceH;
+          browRaised = browGap > 0.085;
+          const mouthGap = Math.abs(face[13].y - face[14].y) / faceH;
+          mouthOpen = mouthGap > 0.05;
+        }
+
+        const r = duplicate ? null : (
+          recognize({
+            hands, handedness,
+            pose: res.poseLandmarks ?? null,
+            face: res.faceLandmarks ?? null,
+            palmFacing, motion, browRaised, mouthOpen,
+          }) ?? recognizeLetter(hands[0])
+        );
+
+        if (r) {
+          const vote = voteRef.current;
+          vote.push(r);
+          if (vote.length > 8) vote.shift(); // janela maior = mais estabilidade
+          const counts: Record<string, { n: number; sum: number }> = {};
+          for (const v of vote) {
+            counts[v.gloss] = counts[v.gloss] || { n: 0, sum: 0 };
+            counts[v.gloss].n++; counts[v.gloss].sum += v.confidence;
           }
-
-          const r =
-            recognize({
-              hands, handedness,
-              pose: res.poseLandmarks ?? null,
-              face: res.faceLandmarks ?? null,
-              palmFacing, motion, browRaised, mouthOpen,
-            }) ??
-            recognizeLetter(hands[0]);
-
-
-          if (r) {
-            // Voto temporal: mantém últimos 5 frames, exige maioria para emitir
-            const vote = voteRef.current;
-            vote.push(r);
-            if (vote.length > 5) vote.shift();
-            const counts: Record<string, { n: number; sum: number }> = {};
-            for (const v of vote) {
-              counts[v.gloss] = counts[v.gloss] || { n: 0, sum: 0 };
-              counts[v.gloss].n++; counts[v.gloss].sum += v.confidence;
-            }
-            const top = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
-            if (!top) { ctx.restore(); return; }
+          const top = Object.entries(counts).sort((a, b) => b[1].n - a[1].n)[0];
+          if (top) {
             const [best, info] = top;
             const ratio = info.n / vote.length;
             const avgConf = info.sum / info.n;
-            // confiança final ponderada pela estabilidade temporal
-            const stableConf = Math.min(1, avgConf * (0.6 + 0.4 * ratio));
+            const stableConf = Math.min(1, avgConf * (0.55 + 0.45 * ratio));
             const ev: GlossEvent = { gloss: best, confidence: stableConf, at: Date.now() };
             setCurrent(ev);
-            // Limiar: precisa de pelo menos 3/5 frames coerentes e confiança ≥ 0.55
-            const fastSign = info.n >= 2 && avgConf >= 0.78; // sinais rápidos com alta confiança
-            const stableSign = info.n >= 3 && stableConf >= 0.55;
-            if (stableSign || fastSign) {
-              const debounce = /^[A-Z]$/.test(best) ? 450 : 700; // letras podem repetir mais rápido
+
+            // Emissão estrita: só se confiança ≥ 80% e maioria forte (≥5/8)
+            const recognized = stableConf >= EMIT_MIN_CONFIDENCE && info.n >= 5 && lightOk && inFrame;
+            if (recognized) {
+              const debounce = /^[A-Z]$/.test(best) ? 450 : 700;
               if (best !== lastEmitRef.current.gloss || Date.now() - lastEmitRef.current.at > debounce) {
                 lastEmitRef.current = { gloss: best, at: Date.now() };
                 onGlossRef.current?.(ev);
               }
             }
-          } else {
-            voteRef.current = [];
+            setQuality({
+              handsDetected, lightOk, inFrame, brightness,
+              unrecognized: stableConf < DISPLAY_MIN_CONFIDENCE,
+              tip: !lightOk ? "Iluminação baixa — melhore a luz sobre as mãos."
+                  : !inFrame ? "Mantenha as mãos totalmente dentro do enquadramento."
+                  : stableConf < DISPLAY_MIN_CONFIDENCE ? "Sinal não reconhecido com segurança — repita com mais nitidez."
+                  : null,
+            });
           }
         } else {
-          voteRef.current = [];
+          // Sem reconhecimento — não inventa, marca unrecognized se há mão
           setCurrent(null);
+          setQuality({
+            handsDetected, lightOk, inFrame, brightness,
+            unrecognized: true,
+            tip: !lightOk ? "Iluminação baixa — melhore a luz sobre as mãos."
+                : !inFrame ? "Mantenha as mãos totalmente dentro do enquadramento."
+                : "Sinal não reconhecido — ajuste a posição da mão e a orientação da palma.",
+          });
         }
         ctx.restore();
       });
@@ -390,9 +440,11 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
       const video = videoRef.current; if (!video) throw new Error("Vídeo indisponível");
       const camera = new w.Camera(video, {
         onFrame: async () => {
-          if (holisticRef.current && video.readyState >= 2) {
-            await holisticRef.current.send({ image: video });
-          }
+          if (!holisticRef.current || video.readyState < 2) return;
+          if (inFlightRef.current) return; // descarta frames se MediaPipe ainda processa
+          inFlightRef.current = true;
+          try { await holisticRef.current.send({ image: video }); }
+          finally { inFlightRef.current = false; }
         },
         width: 640, height: 480,
       });
@@ -409,5 +461,5 @@ export function useHolisticRecognition({ videoRef, canvasRef, onGloss, lowLightB
 
   useEffect(() => () => stop(), [stop]);
 
-  return { active, loading, error, current, fps, start, stop };
+  return { active, loading, error, current, fps, quality, start, stop };
 }
