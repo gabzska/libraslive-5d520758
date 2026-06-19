@@ -321,6 +321,7 @@ export type Database = {
           criado_por: string | null
           descricao: string | null
           id: string
+          imagem_url: string | null
           origem: string
           palavra: string
           relacionados: string[]
@@ -338,6 +339,7 @@ export type Database = {
           criado_por?: string | null
           descricao?: string | null
           id?: string
+          imagem_url?: string | null
           origem?: string
           palavra: string
           relacionados?: string[]
@@ -355,6 +357,7 @@ export type Database = {
           criado_por?: string | null
           descricao?: string | null
           id?: string
+          imagem_url?: string | null
           origem?: string
           palavra?: string
           relacionados?: string[]
