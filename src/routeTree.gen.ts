@@ -18,6 +18,7 @@ import { Route as BibliotecaRouteImport } from './routes/biblioteca'
 import { Route as AprenderRouteImport } from './routes/aprender'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
+import { Route as BibliotecaAdminRouteImport } from './routes/biblioteca.admin'
 import { Route as ApiPublicTranslateRouteImport } from './routes/api/public/translate'
 import { Route as ApiPublicSignsRouteImport } from './routes/api/public/signs'
 import { Route as ApiPublicHospitalPhrasesRouteImport } from './routes/api/public/hospital-phrases'
@@ -68,6 +69,11 @@ const EducacaoSlugRoute = EducacaoSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => EducacaoRoute,
 } as any)
+const BibliotecaAdminRoute = BibliotecaAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => BibliotecaRoute,
+} as any)
 const ApiPublicTranslateRoute = ApiPublicTranslateRouteImport.update({
   id: '/api/public/translate',
   path: '/api/public/translate',
@@ -93,12 +99,13 @@ const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
-  '/biblioteca': typeof BibliotecaRoute
+  '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
   '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
@@ -108,12 +115,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
-  '/biblioteca': typeof BibliotecaRoute
+  '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
   '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
@@ -124,12 +132,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
-  '/biblioteca': typeof BibliotecaRoute
+  '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
   '/api/public/hospital-phrases': typeof ApiPublicHospitalPhrasesRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
     | '/api/public/hospital-phrases'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
     | '/api/public/hospital-phrases'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
     | '/api/public/hospital-phrases'
@@ -187,7 +199,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AprenderRoute: typeof AprenderRoute
-  BibliotecaRoute: typeof BibliotecaRoute
+  BibliotecaRoute: typeof BibliotecaRouteWithChildren
   ConversaRoute: typeof ConversaRoute
   EducacaoRoute: typeof EducacaoRouteWithChildren
   HospitalRoute: typeof HospitalRoute
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EducacaoSlugRouteImport
       parentRoute: typeof EducacaoRoute
     }
+    '/biblioteca/admin': {
+      id: '/biblioteca/admin'
+      path: '/admin'
+      fullPath: '/biblioteca/admin'
+      preLoaderRoute: typeof BibliotecaAdminRouteImport
+      parentRoute: typeof BibliotecaRoute
+    }
     '/api/public/translate': {
       id: '/api/public/translate'
       path: '/api/public/translate'
@@ -295,6 +314,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BibliotecaRouteChildren {
+  BibliotecaAdminRoute: typeof BibliotecaAdminRoute
+}
+
+const BibliotecaRouteChildren: BibliotecaRouteChildren = {
+  BibliotecaAdminRoute: BibliotecaAdminRoute,
+}
+
+const BibliotecaRouteWithChildren = BibliotecaRoute._addFileChildren(
+  BibliotecaRouteChildren,
+)
+
 interface EducacaoRouteChildren {
   EducacaoSlugRoute: typeof EducacaoSlugRoute
 }
@@ -310,7 +341,7 @@ const EducacaoRouteWithChildren = EducacaoRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AprenderRoute: AprenderRoute,
-  BibliotecaRoute: BibliotecaRoute,
+  BibliotecaRoute: BibliotecaRouteWithChildren,
   ConversaRoute: ConversaRoute,
   EducacaoRoute: EducacaoRouteWithChildren,
   HospitalRoute: HospitalRoute,

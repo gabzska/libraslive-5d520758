@@ -58,6 +58,9 @@ function Biblioteca() {
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Início
         </Link>
+        <Link to="/biblioteca/admin" className="ml-3 inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground hover:bg-accent">
+          Editar mídia
+        </Link>
 
         <header className="mt-5 flex flex-wrap items-end justify-between gap-4">
           <div>

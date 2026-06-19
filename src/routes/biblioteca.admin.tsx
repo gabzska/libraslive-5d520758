@@ -8,7 +8,7 @@ import { SignVideo } from "@/components/SignVideo";
 import { supabase } from "@/integrations/supabase/client";
 import { listSinais, type Sinal } from "@/services/signal-library";
 
-export const Route = createFileRoute("/biblioteca.admin")({
+export const Route = createFileRoute("/biblioteca/admin")({
   head: () => ({
     meta: [
       { title: "Editar Biblioteca — LibrasLive" },
