@@ -9,8 +9,10 @@ import { toast } from "sonner";
 import { AppNav } from "@/components/AppNav";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
+import { SignVideo } from "@/components/SignVideo";
 import { supabase } from "@/integrations/supabase/client";
 import { translateToVLibras } from "@/lib/vlibras";
+import { listAlfabeto, type Sinal } from "@/services/signal-library";
 import {
   type GamificationState, load as loadGam, applyEvent, levelProgress, levelFromXp,
   MEDALS, syncRanking, fetchLeaderboard, save as saveGam,
@@ -202,66 +204,125 @@ function MedalsStrip({ state }: { state: GamificationState }) {
   );
 }
 
-function pickQuestion() {
-  const correct = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-  const pool = LETTERS.filter((l) => l !== correct);
-  const opts = [correct];
-  while (opts.length < 4) {
-    const p = pool[Math.floor(Math.random() * pool.length)];
-    if (!opts.includes(p)) opts.push(p);
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return { correct, options: opts.sort(() => Math.random() - 0.5) };
+  return a;
+}
+
+interface QuizQuestion { correct: Sinal; options: string[] }
+
+function buildQuestion(pool: Sinal[], previousId?: string): QuizQuestion | null {
+  if (pool.length < 4) return null;
+  const candidates = pool.length > 4 && previousId
+    ? pool.filter((s) => s.id !== previousId)
+    : pool;
+  const correct = candidates[Math.floor(Math.random() * candidates.length)];
+  const distractors = shuffle(pool.filter((s) => s.id !== correct.id)).slice(0, 3);
+  const options = shuffle([correct.palavra, ...distractors.map((d) => d.palavra)]);
+  return { correct, options };
 }
 
 function Quiz({ onAnswer }: { onAnswer: (ok: boolean) => void }) {
-  const [q, setQ] = useState(pickQuestion);
+  const { data: alfabeto, isLoading } = useQuery({
+    queryKey: ["alfabeto"],
+    queryFn: listAlfabeto,
+    staleTime: 5 * 60_000,
+  });
+
+  const pool = useMemo(() => alfabeto ?? [], [alfabeto]);
+  const [q, setQ] = useState<QuizQuestion | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
-  const next = () => { setQ(pickQuestion()); setPicked(null); };
+
+  useEffect(() => {
+    if (pool.length >= 4 && !q) setQ(buildQuestion(pool));
+  }, [pool, q]);
+
+  const next = () => { setQ(buildQuestion(pool, q?.correct.id)); setPicked(null); };
+
+  if (isLoading || !q) {
+    return (
+      <div className="rounded-3xl border bg-card/80 p-6 shadow-card">
+        <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+        <div className="mt-4 aspect-video w-full animate-pulse rounded-2xl bg-muted" />
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const answered = picked !== null;
+  const isCorrect = answered && picked === q.correct.palavra;
 
   return (
     <div className="rounded-3xl border bg-card/80 p-6 shadow-card">
       <p className="text-xs font-medium uppercase tracking-wider text-primary">Quiz do alfabeto</p>
-      <h2 className="mt-1 font-display text-xl font-semibold">Qual letra a mão está representando?</h2>
+      <h2 className="mt-1 font-display text-xl font-semibold">Qual é esta letra?</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Observe o sinal em Libras e escolha a letra correspondente. A resposta só aparece após sua tentativa.
+      </p>
 
-      <div className="mt-5 grid place-items-center rounded-2xl border bg-background/60 p-6">
-        <LetterGlyph letter={q.correct} />
-        <p className="mt-2 text-xs text-muted-foreground">Observe a configuração e escolha abaixo.</p>
+      <div className="mt-5">
+        <SignVideo
+          palavra={q.correct.palavra}
+          videoUrl={q.correct.video_url}
+          imagemUrl={q.correct.imagem_url}
+          descricao={q.correct.descricao}
+          hideCaption={!answered}
+          hideDescription={!answered}
+          ariaLabel="Sinal a ser identificado"
+          fallback={<QuizHandFallback letter={q.correct.palavra} />}
+        />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div role="radiogroup" aria-label="Alternativas" className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {q.options.map((opt) => {
           const isPicked = picked === opt;
-          const correct = picked && opt === q.correct;
-          const wrong = picked && isPicked && opt !== q.correct;
+          const correctOpt = answered && opt === q.correct.palavra;
+          const wrongOpt = answered && isPicked && opt !== q.correct.palavra;
           return (
             <button
               key={opt}
-              disabled={!!picked}
-              onClick={() => {
-                setPicked(opt);
-                onAnswer(opt === q.correct);
-              }}
+              role="radio"
+              aria-checked={isPicked}
+              disabled={answered}
+              onClick={() => { setPicked(opt); onAnswer(opt === q.correct.palavra); }}
               className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-lg font-bold transition ${
-                correct ? "border-primary bg-primary/15 text-primary"
-                : wrong ? "border-destructive bg-destructive/10 text-destructive"
+                correctOpt ? "border-primary bg-primary/15 text-primary"
+                : wrongOpt ? "border-destructive bg-destructive/10 text-destructive"
                 : "bg-card hover:bg-accent"
               }`}
             >
               {opt}
-              {correct && <Check className="h-4 w-4" />}
-              {wrong && <X className="h-4 w-4" />}
+              {correctOpt && <Check className="h-4 w-4" aria-hidden />}
+              {wrongOpt && <X className="h-4 w-4" aria-hidden />}
             </button>
           );
         })}
       </div>
 
-      {picked && (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+      {answered && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mt-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3 ${
+            isCorrect ? "border-primary/40 bg-primary/10" : "border-destructive/40 bg-destructive/10"
+          }`}
+        >
           <p className="text-sm">
-            {picked === q.correct ? (
-              <span className="text-primary">Correto! É a letra {q.correct}.</span>
+            {isCorrect ? (
+              <span className="font-medium text-primary">✓ Correto! É a letra {q.correct.palavra}.</span>
             ) : (
-              <span className="text-destructive">A letra correta era {q.correct}.</span>
+              <span className="font-medium text-destructive">✗ Você marcou {picked}. A letra correta era {q.correct.palavra}.</span>
+            )}
+            {q.correct.descricao && (
+              <span className="ml-2 block text-xs text-muted-foreground sm:inline">{q.correct.descricao}</span>
             )}
           </p>
           <button
@@ -276,10 +337,23 @@ function Quiz({ onAnswer }: { onAnswer: (ok: boolean) => void }) {
   );
 }
 
-function LetterGlyph({ letter }: { letter: string }) {
+function QuizHandFallback({ letter }: { letter: string }) {
+  // Fallback neutro — NÃO revela a letra antes da resposta.
   return (
-    <div className="grid h-40 w-40 place-items-center rounded-full bg-primary/10 text-primary">
-      <span className="font-display text-7xl font-bold">{letter}</span>
+    <div className="text-center">
+      <div className="mx-auto grid h-24 w-24 place-items-center rounded-full gradient-primary shadow-glow">
+        <span className="font-display text-3xl font-bold text-primary-foreground">?</span>
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Vídeo do sinal indisponível — toque para visualizar no avatar VLibras.
+      </p>
+      <button
+        type="button"
+        onClick={() => translateToVLibras(letter)}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs hover:bg-accent"
+      >
+        <Volume2 className="h-3.5 w-3.5 text-primary" /> Reproduzir no VLibras
+      </button>
     </div>
   );
 }
