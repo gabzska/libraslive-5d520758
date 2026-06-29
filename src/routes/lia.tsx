@@ -72,14 +72,11 @@ function LiaPage() {
           <div className="grid gap-8 md:grid-cols-[1fr,1.2fr] md:items-center">
             <div className="flex flex-col items-center gap-6">
               <Lia3DStage className="aspect-square w-full max-w-[360px]" />
-
-      {/* DEMO INTERATIVA */}
-      <section className="mx-auto max-w-6xl px-5 pb-14">
-        <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur md:p-10">
-          <div className="grid gap-8 md:grid-cols-[1fr,1.2fr] md:items-center">
-            <div className="flex flex-col items-center gap-6">
-              <LiaInterpreter size="xl" variant="portrait" message={bubble} showBubble bubbleSide="bottom" />
-            </div>
+              {bubble && (
+                <p className="rounded-2xl border bg-card/80 px-4 py-2 text-sm text-muted-foreground backdrop-blur">
+                  {bubble}
+                </p>
+              )}
             <div>
               <p className="text-xs uppercase tracking-wider text-primary">Experimente</p>
               <h2 className="mt-1 font-display text-2xl font-bold">Peça à Lia para sinalizar</h2>
