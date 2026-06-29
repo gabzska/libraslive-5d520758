@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppNav } from "@/components/AppNav";
-import { LiaInterpreter } from "@/components/LiaInterpreter";
 import { Lia3DStage } from "@/components/Lia3DStage";
 import { playSign, SIGN_LIBRARY } from "@/lib/lia-sign-library";
 import { Sparkles, Heart, Hand, Brain, Accessibility, ArrowRight } from "lucide-react";
