@@ -37,19 +37,27 @@ export interface SignDefinition {
  * Signal Library Service (DB), este registry é apenas o catálogo
  * executável pela Lia.
  */
+/**
+ * Convenção: cada gloss aponta para um arquivo `.glb` em
+ * `/public/animations/<gloss>.glb` (slug normalizado, sem acentos).
+ * Quando o arquivo ainda não existe, o pipeline 3D ignora silenciosamente
+ * e o balão 2D continua respondendo — sem quebrar nada.
+ */
+const anim = (slug: string) => `/animations/${slug}.glb`;
+
 export const SIGN_LIBRARY: Record<string, SignDefinition> = {
-  "OLÁ": { gloss: "OLÁ", label: "Olá", description: "Mão aberta acena ao lado da cabeça", durationMs: 1100 },
-  "TCHAU": { gloss: "TCHAU", label: "Tchau", description: "Mão aberta acena para fora", durationMs: 1100 },
-  "OBRIGADO": { gloss: "OBRIGADO", label: "Obrigado", description: "Mão do queixo para frente", durationMs: 1200 },
-  "POR-FAVOR": { gloss: "POR-FAVOR", label: "Por favor", description: "Mão circula sobre o peito", durationMs: 1200 },
-  "SIM": { gloss: "SIM", label: "Sim", description: "Punho fechado balança afirmativo", durationMs: 800 },
-  "NÃO": { gloss: "NÃO", label: "Não", description: "Indicador balança lateralmente", durationMs: 800 },
-  "EU": { gloss: "EU", label: "Eu", description: "Indicador aponta para o próprio peito", durationMs: 700 },
-  "VOCÊ": { gloss: "VOCÊ", label: "Você", description: "Indicador aponta para frente", durationMs: 700 },
-  "AMOR": { gloss: "AMOR", label: "Amor", description: "Mãos cruzadas sobre o peito", durationMs: 1300 },
-  "LIBRAS": { gloss: "LIBRAS", label: "Libras", description: "Sinal das mãos rotacionando, símbolo da língua", durationMs: 1400 },
-  "BRASIL": { gloss: "BRASIL", label: "Brasil", description: "Mão em B com movimento característico", durationMs: 1200 },
-  "AJUDA": { gloss: "AJUDA", label: "Ajuda", description: "Punho fechado sobe na palma aberta", durationMs: 1100 },
+  "OLÁ":      { gloss: "OLÁ",      label: "Olá",      description: "Mão aberta acena ao lado da cabeça",        durationMs: 1100, animationUrl: anim("ola") },
+  "TCHAU":    { gloss: "TCHAU",    label: "Tchau",    description: "Mão aberta acena para fora",                 durationMs: 1100, animationUrl: anim("tchau") },
+  "OBRIGADO": { gloss: "OBRIGADO", label: "Obrigado", description: "Mão do queixo para frente",                  durationMs: 1200, animationUrl: anim("obrigado") },
+  "POR-FAVOR":{ gloss: "POR-FAVOR",label: "Por favor",description: "Mão circula sobre o peito",                  durationMs: 1200, animationUrl: anim("por-favor") },
+  "SIM":      { gloss: "SIM",      label: "Sim",      description: "Punho fechado balança afirmativo",           durationMs: 800,  animationUrl: anim("sim") },
+  "NÃO":      { gloss: "NÃO",      label: "Não",      description: "Indicador balança lateralmente",             durationMs: 800,  animationUrl: anim("nao") },
+  "EU":       { gloss: "EU",       label: "Eu",       description: "Indicador aponta para o próprio peito",      durationMs: 700,  animationUrl: anim("eu") },
+  "VOCÊ":     { gloss: "VOCÊ",     label: "Você",     description: "Indicador aponta para frente",               durationMs: 700,  animationUrl: anim("voce") },
+  "AMOR":     { gloss: "AMOR",     label: "Amor",     description: "Mãos cruzadas sobre o peito",                durationMs: 1300, animationUrl: anim("amor") },
+  "LIBRAS":   { gloss: "LIBRAS",   label: "Libras",   description: "Sinal das mãos rotacionando, símbolo da língua", durationMs: 1400, animationUrl: anim("libras") },
+  "BRASIL":   { gloss: "BRASIL",   label: "Brasil",   description: "Mão em B com movimento característico",      durationMs: 1200, animationUrl: anim("brasil") },
+  "AJUDA":    { gloss: "AJUDA",    label: "Ajuda",    description: "Punho fechado sobe na palma aberta",         durationMs: 1100, animationUrl: anim("ajuda") },
 };
 
 export function getSign(gloss: string): SignDefinition | null {
