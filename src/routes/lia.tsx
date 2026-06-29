@@ -77,6 +77,7 @@ function LiaPage() {
                   {bubble}
                 </p>
               )}
+            </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-primary">Experimente</p>
               <h2 className="mt-1 font-display text-2xl font-bold">Peça à Lia para sinalizar</h2>
