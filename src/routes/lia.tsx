@@ -62,13 +62,16 @@ function LiaPage() {
 
         <div className="relative flex justify-center">
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[oklch(0.62_0.21_295)]/15 via-transparent to-[oklch(0.78_0.16_310)]/20 blur-3xl" />
-          <img
-            src={liaAsset.url}
-            alt="Lia, intérprete virtual de Libras do LibrasLive, fazendo o sinal de 'eu te amo'"
-            className="max-h-[520px] w-auto drop-shadow-2xl"
-          />
+          <Lia3DStage className="aspect-[4/5] w-full max-w-[420px]" enableControls />
         </div>
       </section>
+
+      {/* DEMO INTERATIVA */}
+      <section className="mx-auto max-w-6xl px-5 pb-14">
+        <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur md:p-10">
+          <div className="grid gap-8 md:grid-cols-[1fr,1.2fr] md:items-center">
+            <div className="flex flex-col items-center gap-6">
+              <Lia3DStage className="aspect-square w-full max-w-[360px]" />
 
       {/* DEMO INTERATIVA */}
       <section className="mx-auto max-w-6xl px-5 pb-14">
