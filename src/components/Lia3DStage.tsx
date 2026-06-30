@@ -173,11 +173,11 @@ function LiaRig({ url }: { url: string }) {
 
   // Tenta encontrar bones por nomes comuns (Mixamo / generic) para fallback procedural.
   const bones = useMemo(() => {
-    const find = (...patterns: RegExp[]) => {
+    const find = (...patterns: RegExp[]): THREE.Object3D | null => {
       let hit: THREE.Object3D | null = null;
       gltf.scene.traverse((obj) => {
         if (hit) return;
-        if (patterns.some((p) => p.test(obj.name))) hit = obj;
+        if (patterns.some((p) => p.test(obj.name))) hit = obj as THREE.Object3D;
       });
       return hit;
     };
