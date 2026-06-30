@@ -103,8 +103,47 @@ function LiaPage() {
               <p className="mt-4 text-xs text-muted-foreground">
                 {Object.keys(SIGN_LIBRARY).length} sinais no catálogo inicial · biblioteca expansível
               </p>
-            </div>
-          </div>
+
+              <div className="mt-6 border-t pt-5">
+                <p className="text-xs uppercase tracking-wider text-primary">Animações 3D (placeholder)</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  API <code className="rounded bg-muted px-1.5 py-0.5 text-xs">playAnimation(name)</code>{" "}
+                  — pronta para receber GLBs reais sem mudar nenhuma chamada.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => {
+                      setBubble("Olá! 👋");
+                      await playAnimation("Ola");
+                      setBubble("Tudo bem?");
+                      await playAnimation("TudoBem");
+                      await playAnimation("Idle");
+                      setBubble("Oi! Eu sou a Lia 👋");
+                    }}
+                    className="rounded-full gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110"
+                  >
+                    ▶ Olá → Tudo bem → Idle
+                  </button>
+                  <button
+                    onClick={() => { setBubble("Olá! 👋"); playAnimation("Ola"); }}
+                    className="rounded-full border bg-background px-4 py-2 text-sm font-medium transition hover:border-primary/60 hover:bg-primary/5"
+                  >
+                    Olá
+                  </button>
+                  <button
+                    onClick={() => { setBubble("Tudo bem?"); playAnimation("TudoBem"); }}
+                    className="rounded-full border bg-background px-4 py-2 text-sm font-medium transition hover:border-primary/60 hover:bg-primary/5"
+                  >
+                    Tudo bem
+                  </button>
+                  <button
+                    onClick={() => { setBubble("Oi! Eu sou a Lia 👋"); playAnimation("Idle"); }}
+                    className="rounded-full border bg-background px-4 py-2 text-sm font-medium transition hover:border-primary/60 hover:bg-primary/5"
+                  >
+                    Idle
+                  </button>
+                </div>
+              </div>
         </div>
       </section>
 
