@@ -228,7 +228,9 @@ function LiaRig({ url }: { url: string }) {
       const glb = evt.animation?.glbUrl;
       if (glb) {
         fetch(glb, { method: "HEAD" })
-          .then((r) => r.ok && playClipUrl(glb, evt.animation!.durationMs))
+          .then((r) => {
+            if (r.ok) void playClipUrl(glb, evt.animation!.durationMs);
+          })
           .catch(() => void 0);
       }
     });
