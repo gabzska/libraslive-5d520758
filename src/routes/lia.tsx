@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { Lia3DStage } from "@/components/Lia3DStage";
 import { playSign, SIGN_LIBRARY } from "@/lib/lia-sign-library";
+import { playAnimation } from "@/lib/lia-animations";
 import { Sparkles, Heart, Hand, Brain, Accessibility, ArrowRight } from "lucide-react";
 import liaAsset from "@/assets/lia-mascot.png.asset.json";
 
