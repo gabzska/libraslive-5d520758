@@ -4,13 +4,14 @@ import { OrbitControls, Environment, useGLTF, Html, useAnimations } from "@react
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { subscribeLia, getSign } from "@/lib/lia-sign-library";
+import {
+  subscribeAnimation,
+  getAnimation,
+  type ProceduralAnimation,
+  type AnimationSample,
+} from "@/lib/lia-animations";
 
 interface Lia3DStageProps {
-  /**
-   * Caminho do GLB riggado da Lia. Default: `/models/lia.glb`.
-   * Se o arquivo não existir, o componente cai num placeholder elegante
-   * sem quebrar o app.
-   */
   modelUrl?: string;
   className?: string;
   enableControls?: boolean;
@@ -18,20 +19,17 @@ interface Lia3DStageProps {
 }
 
 /**
- * <Lia3DStage /> — Cena React Three Fiber com pipeline completo:
+ * <Lia3DStage /> — Cena React Three Fiber.
  *
- *   Texto → gloss → SIGN_LIBRARY[gloss].animationUrl → GLBLoader → AnimationMixer → rig
+ * Pipelines suportados (em ordem de prioridade):
+ *   1. `playAnimation(name)` → GLB em `ANIMATIONS[name].glbUrl` (se existir)
+ *   2. `playAnimation(name)` → função procedural `sample(t)` (placeholder)
+ *   3. `playSign(gloss)`     → GLB em `SIGN_LIBRARY[gloss].animationUrl`
+ *   4. `playSign(gloss)`     → AnimationClip embutida no próprio GLB do avatar
  *
- * O componente:
- *  1. Carrega o avatar principal de `/models/lia.glb` (ou `modelUrl`)
- *  2. Escuta `subscribeLia()` (pub/sub global)
- *  3. Quando um gloss chega, baixa o GLB de animação correspondente,
- *     mescla a clip no skeleton do avatar e dispara a `AnimationAction`
- *  4. Faz crossfade entre animações (idle ↔ sign ↔ idle)
- *
- * Se o GLB do modelo ainda não foi entregue, mostra um placeholder amigável
- * (mesmo placeholder que antes), e os comandos `playSign` continuam disparando
- * o pub/sub sem erro.
+ * Quando o avatar real chegar em `/models/lia.glb` e os GLBs em
+ * `/animations/*.glb` forem fornecidos, o stage usa-os automaticamente.
+ * Enquanto isso, o placeholder reage às mesmas chamadas — mesmo código.
  */
 export function Lia3DStage({
   modelUrl = "/models/lia.glb",
@@ -42,7 +40,7 @@ export function Lia3DStage({
   return (
     <div className={className} style={{ minHeight: 320 }}>
       <Canvas
-        camera={{ position: [0, 1.5, 2.8], fov: 38 }}
+        camera={{ position: [0, 1.4, 2.8], fov: 38 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}
         style={{ background: background ?? "transparent" }}
@@ -69,10 +67,6 @@ export function Lia3DStage({
   );
 }
 
-/**
- * Tenta carregar o modelo. Se falhar (arquivo ainda não existe), renderiza
- * o placeholder no lugar — sem propagar o erro para a árvore.
- */
 function LiaSceneRoot({ modelUrl }: { modelUrl: string }) {
   const [available, setAvailable] = useState<boolean | null>(null);
 
@@ -92,8 +86,52 @@ function LiaSceneRoot({ modelUrl }: { modelUrl: string }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
- * Cache global de clips de animação (GLB → AnimationClip[])
- * Evita refazer download/parse a cada playSign.
+ * Estado runtime de animação procedural (compartilhado entre rig e placeholder).
+ * ────────────────────────────────────────────────────────────── */
+interface ActiveProc {
+  anim: ProceduralAnimation;
+  startedAt: number;
+}
+
+/** Hook que retorna a amostra atual da animação procedural ativa. */
+function useActiveProcedural() {
+  const ref = useRef<ActiveProc | null>({
+    anim: getAnimation("Idle")!,
+    startedAt: performance.now(),
+  });
+
+  useEffect(() => {
+    return subscribeAnimation((evt) => {
+      if (!evt.animation) return;
+      ref.current = { anim: evt.animation, startedAt: evt.startedAt };
+    });
+  }, []);
+
+  /** Amostra a animação ativa em `now`. Volta para Idle quando termina. */
+  return (now: number): AnimationSample => {
+    const cur = ref.current;
+    if (!cur) return {};
+    const elapsed = now - cur.startedAt;
+    let t = elapsed / cur.anim.durationMs;
+    if (t >= 1) {
+      if (cur.anim.loop) {
+        t = t - Math.floor(t);
+      } else {
+        // termina → cai para Idle automaticamente
+        const idle = getAnimation("Idle");
+        if (idle && cur.anim.name !== "Idle") {
+          ref.current = { anim: idle, startedAt: now };
+          return idle.sample(0);
+        }
+        t = 1;
+      }
+    }
+    return cur.anim.sample(Math.max(0, Math.min(1, t)));
+  };
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Clip cache para GLBs externos de animação (sinais).
  * ────────────────────────────────────────────────────────────── */
 const clipCache = new Map<string, Promise<THREE.AnimationClip[]>>();
 const glbLoader = new GLTFLoader();
@@ -115,33 +153,45 @@ function loadClips(url: string): Promise<THREE.AnimationClip[]> {
 }
 
 /* ──────────────────────────────────────────────────────────────
- * Rig real — carrega o GLB do avatar e expõe o pipeline de animação.
+ * Rig real — GLB de avatar carregado.
  * ────────────────────────────────────────────────────────────── */
 function LiaRig({ url }: { url: string }) {
   const gltf = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
-
-  // Animações embutidas no próprio GLB do avatar (ex: idle).
   const { actions, mixer, names } = useAnimations(gltf.animations ?? [], groupRef);
-
-  // Action atualmente tocando para um sinal — guardada para fazer crossfade.
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
-  // Cache de actions criadas a partir de clips externos, por URL.
   const externalActionsRef = useRef<Map<string, THREE.AnimationAction>>(new Map());
 
-  // Action idle (se existir uma clip chamada Idle/idle/IDLE no GLB).
   const idleAction = useMemo<THREE.AnimationAction | null>(() => {
     const idleName = names.find((n) => /idle/i.test(n));
     return idleName ? actions[idleName] ?? null : null;
   }, [actions, names]);
 
   useEffect(() => {
-    if (idleAction) {
-      idleAction.reset().fadeIn(0.3).play();
-    }
+    if (idleAction) idleAction.reset().fadeIn(0.3).play();
   }, [idleAction]);
 
-  /** Aplica uma clip externa ao rig e dispara com crossfade. */
+  // Tenta encontrar bones por nomes comuns (Mixamo / generic) para fallback procedural.
+  const bones = useMemo(() => {
+    const find = (...patterns: RegExp[]): THREE.Object3D | null => {
+      let hit: THREE.Object3D | null = null;
+      gltf.scene.traverse((obj) => {
+        if (hit) return;
+        if (patterns.some((p) => p.test(obj.name))) hit = obj as THREE.Object3D;
+      });
+      return hit;
+    };
+    return {
+      rightArm: find(/RightArm$/i, /mixamorigRightArm/i, /Arm\.R$/i, /upper_?arm\.?R/i),
+      rightForearm: find(/RightForeArm/i, /mixamorigRightForeArm/i, /ForeArm\.R$/i, /forearm\.?R/i),
+      leftArm: find(/LeftArm$/i, /mixamorigLeftArm/i, /Arm\.L$/i, /upper_?arm\.?L/i),
+      head: find(/^Head$/i, /mixamorigHead/i),
+    };
+  }, [gltf.scene]);
+
+  const sampleProc = useActiveProcedural();
+
+  /** Aplica clip externa via URL (mesma lógica anterior do playSign 3D). */
   async function playClipUrl(animationUrl: string, durationMs: number) {
     if (!mixer || !groupRef.current) return;
     let action = externalActionsRef.current.get(animationUrl);
@@ -155,7 +205,6 @@ function LiaRig({ url }: { url: string }) {
         action.clampWhenFinished = true;
         externalActionsRef.current.set(animationUrl, action);
       } catch {
-        // Animação ainda não existe — silenciosamente ignora.
         return;
       }
     }
@@ -164,29 +213,39 @@ function LiaRig({ url }: { url: string }) {
     if (idleAction && idleAction !== action) idleAction.fadeOut(0.25);
     action.reset().fadeIn(0.25).play();
     currentActionRef.current = action;
-
-    // Quando o sinal terminar, volta suavemente para idle.
-    const back = window.setTimeout(() => {
+    window.setTimeout(() => {
       if (currentActionRef.current === action) {
         action!.fadeOut(0.3);
         if (idleAction) idleAction.reset().fadeIn(0.3).play();
         currentActionRef.current = null;
       }
     }, durationMs + 100);
-    return () => window.clearTimeout(back);
   }
 
-  // Bus pub/sub: troca animações em tempo real.
+  // Bus playAnimation → tenta GLB; senão deixa o procedural rodar via useFrame.
+  useEffect(() => {
+    return subscribeAnimation((evt) => {
+      const glb = evt.animation?.glbUrl;
+      if (glb) {
+        fetch(glb, { method: "HEAD" })
+          .then((r) => {
+            if (r.ok) void playClipUrl(glb, evt.animation!.durationMs);
+          })
+          .catch(() => void 0);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mixer, idleAction]);
+
+  // Bus playSign → mantém o pipeline anterior por gloss.
   useEffect(() => {
     return subscribeLia((evt) => {
       const sign = evt.sign ?? getSign(evt.gloss);
       const dur = sign?.durationMs ?? 1000;
-      // Prioridade 1: clip por URL específica do gloss.
       if (sign?.animationUrl) {
         playClipUrl(sign.animationUrl, dur);
         return;
       }
-      // Prioridade 2: action embutida no GLB com mesmo nome do gloss.
       const name = names.find((n) => n.toUpperCase() === evt.gloss.toUpperCase());
       const action = name ? actions[name] : null;
       if (action && mixer) {
@@ -209,13 +268,26 @@ function LiaRig({ url }: { url: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions, names, mixer, idleAction]);
 
-  // Respiração leve do conjunto (cosmético, independente do mixer).
-  useFrame((_, dt) => {
+  // Aplica amostragem procedural aos bones SE não houver clip GLB tocando.
+  useFrame(() => {
+    if (currentActionRef.current) return; // GLB tem prioridade
+    const s = sampleProc(performance.now());
     if (!groupRef.current) return;
-    groupRef.current.position.y = Math.sin(performance.now() / 1000) * 0.015;
-    // Pequena rotação ambiente quando nada está tocando
-    if (!currentActionRef.current && !idleAction) {
-      groupRef.current.rotation.y += dt * 0.1;
+    if (s.bodyPosY !== undefined) groupRef.current.position.y = s.bodyPosY;
+    if (s.bodyRotY !== undefined) groupRef.current.rotation.y = s.bodyRotY;
+    if (bones.rightArm) {
+      if (s.rightArmRotZ !== undefined) bones.rightArm.rotation.z = s.rightArmRotZ;
+      if (s.rightArmRotX !== undefined) bones.rightArm.rotation.x = s.rightArmRotX;
+    }
+    if (bones.rightForearm) {
+      if (s.rightForearmRotX !== undefined) bones.rightForearm.rotation.x = s.rightForearmRotX;
+      if (s.rightForearmRotY !== undefined) bones.rightForearm.rotation.y = s.rightForearmRotY;
+    }
+    if (bones.leftArm && s.leftArmRotZ !== undefined) bones.leftArm.rotation.z = -s.leftArmRotZ;
+    if (bones.head) {
+      if (s.headRotX !== undefined) bones.head.rotation.x = s.headRotX;
+      if (s.headRotY !== undefined) bones.head.rotation.y = s.headRotY;
+      if (s.headRotZ !== undefined) bones.head.rotation.z = s.headRotZ;
     }
   });
 
@@ -227,56 +299,128 @@ function LiaRig({ url }: { url: string }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
- * Placeholder — usado quando o GLB do avatar ainda não foi entregue.
- * Reage a playSign() com um leve bounce para provar que o pub/sub vive.
+ * Placeholder articulado — corpo + cabeça + braço direito (ombro+antebraço).
+ * Executa as MESMAS animações procedurais que o rig real usaria como fallback.
  * ────────────────────────────────────────────────────────────── */
 function LiaPlaceholder() {
-  const ref = useRef<THREE.Group>(null);
-  const signRef = useRef(0);
+  const rootRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+  const rightArmRef = useRef<THREE.Group>(null);
+  const rightForearmRef = useRef<THREE.Group>(null);
+  const leftArmRef = useRef<THREE.Group>(null);
 
+  // Pub/sub do playSign (gloss) — leve bounce visual.
+  const signPulseRef = useRef(0);
   useEffect(() => {
     return subscribeLia((evt) => {
-      signRef.current = evt.sign?.durationMs ?? 900;
+      signPulseRef.current = evt.sign?.durationMs ?? 900;
     });
   }, []);
 
+  const sample = useActiveProcedural();
+
   useFrame((_, dt) => {
-    if (!ref.current) return;
-    const t = performance.now() / 1000;
-    ref.current.position.y = 1.05 + Math.sin(t * 1.4) * 0.02;
-    if (signRef.current > 0) {
-      ref.current.rotation.y += dt * 1.4;
-      signRef.current -= dt * 1000;
-    } else {
-      ref.current.rotation.y += dt * 0.15;
+    const s = sample(performance.now());
+
+    if (rootRef.current) {
+      rootRef.current.position.y = (s.bodyPosY ?? 0);
+      rootRef.current.rotation.y = (s.bodyRotY ?? 0);
+      if (signPulseRef.current > 0) {
+        rootRef.current.rotation.y += signPulseRef.current * 0.001;
+        signPulseRef.current -= dt * 1000;
+      }
+    }
+    if (headRef.current) {
+      headRef.current.rotation.x = s.headRotX ?? 0;
+      headRef.current.rotation.y = s.headRotY ?? 0;
+      headRef.current.rotation.z = s.headRotZ ?? 0;
+    }
+    if (rightArmRef.current) {
+      // Ombro: rotZ = levantar para a lateral; rotX = frente/trás
+      rightArmRef.current.rotation.z = -(s.rightArmRotZ ?? 0);
+      rightArmRef.current.rotation.x = s.rightArmRotX ?? 0;
+    }
+    if (rightForearmRef.current) {
+      rightForearmRef.current.rotation.x = s.rightForearmRotX ?? 0;
+      rightForearmRef.current.rotation.y = s.rightForearmRotY ?? 0;
+    }
+    if (leftArmRef.current) {
+      leftArmRef.current.rotation.z = s.leftArmRotZ ?? 0;
     }
   });
 
+  const skin = "#f4d3b8";
+  const hair = "#3a1f12";
+  const shirt = "#c9a8ff";
+
   return (
-    <group ref={ref}>
-      <mesh position={[0, 0.55, 0]} castShadow>
-        <sphereGeometry args={[0.34, 48, 48]} />
-        <meshStandardMaterial color="#f4d3b8" roughness={0.6} />
+    <group ref={rootRef} position={[0, 0, 0]}>
+      {/* Corpo */}
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <capsuleGeometry args={[0.38, 0.55, 8, 24]} />
+        <meshStandardMaterial color={shirt} roughness={0.7} />
       </mesh>
-      <mesh position={[0, 0.62, -0.05]}>
-        <sphereGeometry args={[0.4, 48, 48, 0, Math.PI * 2, 0, Math.PI / 1.6]} />
-        <meshStandardMaterial color="#3a1f12" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, -0.05, 0]} castShadow>
-        <capsuleGeometry args={[0.42, 0.6, 8, 24]} />
-        <meshStandardMaterial color="#c9a8ff" roughness={0.7} />
-      </mesh>
-      <mesh position={[-0.11, 0.58, 0.3]}>
-        <sphereGeometry args={[0.035, 16, 16]} />
-        <meshStandardMaterial color="#2a1810" />
-      </mesh>
-      <mesh position={[0.11, 0.58, 0.3]}>
-        <sphereGeometry args={[0.035, 16, 16]} />
-        <meshStandardMaterial color="#2a1810" />
-      </mesh>
-      <Html center position={[0, -0.95, 0]}>
+
+      {/* Cabeça + cabelo + olhos (pivot na base do pescoço) */}
+      <group ref={headRef} position={[0, 1.05, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.32, 48, 48]} />
+          <meshStandardMaterial color={skin} roughness={0.55} />
+        </mesh>
+        <mesh position={[0, 0.05, -0.04]}>
+          <sphereGeometry args={[0.36, 48, 48, 0, Math.PI * 2, 0, Math.PI / 1.7]} />
+          <meshStandardMaterial color={hair} roughness={0.9} />
+        </mesh>
+        <mesh position={[-0.1, 0.0, 0.28]}>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#2a1810" />
+        </mesh>
+        <mesh position={[0.1, 0.0, 0.28]}>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#2a1810" />
+        </mesh>
+        {/* sorriso */}
+        <mesh position={[0, -0.11, 0.29]} rotation={[0, 0, 0]}>
+          <torusGeometry args={[0.06, 0.012, 8, 24, Math.PI]} />
+          <meshStandardMaterial color="#b2425a" roughness={0.6} />
+        </mesh>
+      </group>
+
+      {/* Braço direito articulado — pivot no ombro */}
+      <group ref={rightArmRef} position={[0.42, 0.78, 0]}>
+        <mesh position={[0, -0.22, 0]} castShadow>
+          <capsuleGeometry args={[0.07, 0.32, 6, 16]} />
+          <meshStandardMaterial color={shirt} roughness={0.7} />
+        </mesh>
+        {/* Cotovelo: pivot na ponta do braço */}
+        <group ref={rightForearmRef} position={[0, -0.42, 0]}>
+          <mesh position={[0, -0.2, 0]} castShadow>
+            <capsuleGeometry args={[0.062, 0.3, 6, 16]} />
+            <meshStandardMaterial color={skin} roughness={0.55} />
+          </mesh>
+          {/* Mão */}
+          <mesh position={[0, -0.42, 0]} castShadow>
+            <sphereGeometry args={[0.085, 24, 24]} />
+            <meshStandardMaterial color={skin} roughness={0.55} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Braço esquerdo (mais simples) */}
+      <group ref={leftArmRef} position={[-0.42, 0.78, 0]}>
+        <mesh position={[0, -0.32, 0]} castShadow>
+          <capsuleGeometry args={[0.07, 0.5, 6, 16]} />
+          <meshStandardMaterial color={shirt} roughness={0.7} />
+        </mesh>
+        <mesh position={[0, -0.62, 0]} castShadow>
+          <sphereGeometry args={[0.08, 24, 24]} />
+          <meshStandardMaterial color={skin} roughness={0.55} />
+        </mesh>
+      </group>
+
+      <Html center position={[0, -0.7, 0]}>
         <span className="rounded-full bg-card/80 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur">
-          coloque o avatar em <code className="font-mono">/public/models/lia.glb</code>
+          placeholder · coloque <code className="font-mono">/public/models/lia.glb</code>
         </span>
       </Html>
     </group>
