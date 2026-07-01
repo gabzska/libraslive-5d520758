@@ -419,69 +419,135 @@ function Conversa() {
             )}
           </div>
 
-          {transcript.length === 0 ? (
+          {transcript.length === 0 && !translating ? (
             <p className="mt-6 text-sm text-muted-foreground">A conversa aparecerá aqui.</p>
           ) : (
             <ul className="mt-5 space-y-3">
-              {transcript.map((e) => (
-                <li key={e.id} className={`rounded-2xl border p-4 ${e.from === "sign" ? "bg-primary/5" : "bg-background/60"}`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`grid h-9 w-9 flex-none place-items-center rounded-full ${e.from === "sign" ? "bg-primary/15 text-primary" : "bg-secondary text-secondary-foreground"}`}>
-                      {e.from === "sign" ? <Hand className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {/* Typing indicator (Lia pensando) */}
+              {translating && (
+                <li className="flex items-end gap-2 animate-fade-in">
+                  <div className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary/15 text-primary">
+                    <Hand className="h-4 w-4" />
+                  </div>
+                  <div className="chat-bubble-lia inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary/70 typing-dot" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary/70 typing-dot" style={{ animationDelay: "0.15s" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary/70 typing-dot" style={{ animationDelay: "0.30s" }} />
+                    <span className="ml-1 text-xs text-muted-foreground">Lia está traduzindo…</span>
+                  </div>
+                </li>
+              )}
+              {transcript.map((e) => {
+                const isLia = e.from === "sign";
+                return (
+                  <li
+                    key={e.id}
+                    className={`flex items-end gap-2 animate-fade-in ${isLia ? "" : "flex-row-reverse"}`}
+                  >
+                    <div
+                      className={`grid h-8 w-8 flex-none place-items-center rounded-full ${
+                        isLia ? "bg-primary/15 text-primary" : "bg-secondary text-secondary-foreground"
+                      }`}
+                      aria-hidden
+                    >
+                      {isLia ? <Hand className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {e.from === "sign" ? "Libras → PT" : "Voz"}
+                    <div className={`flex min-w-0 flex-col ${isLia ? "items-start" : "items-end"}`}>
+                      <div className={`mb-1 flex items-center gap-2 px-1 ${isLia ? "" : "flex-row-reverse"}`}>
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {isLia ? "Lia" : "Você"}
                         </span>
                         {typeof e.confidence === "number" && (
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${e.confidence >= 0.75 ? "bg-primary/15 text-primary" : e.confidence >= 0.4 ? "bg-amber-500/15 text-amber-600" : "bg-destructive/15 text-destructive"}`}>
-                            {Math.round(e.confidence * 100)}% confiança
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+                              e.confidence >= 0.75
+                                ? "bg-primary/15 text-primary"
+                                : e.confidence >= 0.4
+                                  ? "bg-amber-500/15 text-amber-600"
+                                  : "bg-destructive/15 text-destructive"
+                            }`}
+                          >
+                            {Math.round(e.confidence * 100)}%
                           </span>
                         )}
-                        <span className="text-[11px] text-muted-foreground">{new Date(e.at).toLocaleTimeString("pt-BR")}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(e.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
                       </div>
-                      {editingId === e.id ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <input value={draft} onChange={(ev) => setDraft(ev.target.value)}
-                            className="flex-1 min-w-[200px] rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
-                          <button onClick={() => confirmEdit(e)} className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground">
-                            <Check className="h-3.5 w-3.5" /> Salvar
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="mt-1 text-sm leading-relaxed">{e.text}</p>
-                      )}
-                      {e.glosses?.length ? (
-                        <p className="mt-1 text-[11px] text-muted-foreground">Glosas: {e.glosses.join(" · ")}</p>
-                      ) : null}
-                      {e.alternatives?.length ? (
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {e.alternatives.map((a, i) => (
-                            <button key={i} onClick={() => { setTranscript((t) => t.map((x) => x.id === e.id ? { ...x, text: a } : x)); if (e.glosses?.length) saveCorrection(e.glosses.join("|"), a); if (autoSpeak) speak(a); }}
-                              className="rounded-full border bg-card px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent">
+
+                      <div className={isLia ? "chat-bubble-lia" : "chat-bubble-user"}>
+                        {editingId === e.id ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              value={draft}
+                              onChange={(ev) => setDraft(ev.target.value)}
+                              className="min-w-[180px] flex-1 rounded-lg border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => confirmEdit(e)}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs text-primary-foreground"
+                            >
+                              <Check className="h-3.5 w-3.5" /> Salvar
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap">{e.text}</p>
+                        )}
+                      </div>
+
+                      {(e.glosses?.length || e.alternatives?.length) && (
+                        <div className={`mt-1 flex max-w-full flex-wrap gap-1.5 px-1 ${isLia ? "" : "justify-end"}`}>
+                          {e.glosses?.length ? (
+                            <span className="text-[10px] text-muted-foreground">
+                              {e.glosses.join(" · ")}
+                            </span>
+                          ) : null}
+                          {e.alternatives?.map((a, i) => (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                setTranscript((t) => t.map((x) => (x.id === e.id ? { ...x, text: a } : x)));
+                                if (e.glosses?.length) saveCorrection(e.glosses.join("|"), a);
+                                if (autoSpeak) speak(a);
+                              }}
+                              className="rounded-full border bg-card px-2 py-0.5 text-[10px] text-muted-foreground transition hover:bg-accent"
+                            >
                               {a}
                             </button>
                           ))}
                         </div>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <button onClick={() => (e.from === "sign" ? speak(e.text) : translateToVLibras(e.text))}
-                        className="rounded-full border bg-card p-2 hover:bg-accent" aria-label="Reproduzir">
-                        {e.from === "sign" ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <Hand className="h-3.5 w-3.5 text-primary" />}
-                      </button>
-                      {e.from === "sign" && (
-                        <button onClick={() => startEdit(e)} className="rounded-full border bg-card p-2 hover:bg-accent" aria-label="Editar">
-                          <Pencil className="h-3.5 w-3.5 text-primary" />
-                        </button>
                       )}
+
+                      <div className={`mt-1 flex gap-1 px-1 ${isLia ? "" : "flex-row-reverse"}`}>
+                        <button
+                          onClick={() => (isLia ? speak(e.text) : translateToVLibras(e.text))}
+                          className="rounded-full border bg-card/70 p-1.5 transition hover:bg-accent"
+                          aria-label="Reproduzir"
+                        >
+                          {isLia ? (
+                            <Volume2 className="h-3 w-3 text-primary" />
+                          ) : (
+                            <Hand className="h-3 w-3 text-primary" />
+                          )}
+                        </button>
+                        {isLia && (
+                          <button
+                            onClick={() => startEdit(e)}
+                            className="rounded-full border bg-card/70 p-1.5 transition hover:bg-accent"
+                            aria-label="Editar tradução"
+                          >
+                            <Pencil className="h-3 w-3 text-primary" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
+
         </div>
       </section>
     </main>
