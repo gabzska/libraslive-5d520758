@@ -13,6 +13,7 @@ import { reconstructSentence } from "@/lib/libras.functions";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
 import { LiaInterpreter } from "@/components/LiaInterpreter";
 import { playSign, type LiaState } from "@/lib/lia-sign-library";
+import { playAnimation } from "@/lib/lia-animations";
 
 export const Route = createFileRoute("/conversa")({
   head: () => ({
