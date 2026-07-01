@@ -96,8 +96,11 @@ function Conversa() {
         confidence: out.confidence, alternatives: out.alternatives, at: Date.now(),
       };
       setTranscript((t) => [entry, ...t].slice(0, 60));
-      // A Lia "fala" a frase reconstruída
+      // A Lia "fala" a frase reconstruída (sinal + animação de resposta)
       void playSign(glosses[0] ?? "OLÁ", { text: out.sentence });
+      const firstGloss = (glosses[0] ?? "").toUpperCase();
+      if (firstGloss === "OLÁ" || firstGloss === "OI") void playAnimation("Ola");
+      else if (firstGloss.includes("TUDO") || firstGloss === "BEM") void playAnimation("TudoBem");
       if (autoSpeak) speak(out.sentence);
     } catch (e: any) {
       const entry: Entry = {
