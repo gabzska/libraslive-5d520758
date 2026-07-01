@@ -38,15 +38,27 @@ export function Lia3DStage({
   background = null,
 }: Lia3DStageProps) {
   return (
-    <div className={className} style={{ minHeight: 320 }}>
+    <div
+      className={className}
+      style={{ minHeight: 320, position: "relative" }}
+    >
+      {/* Halo suave por trás — dá profundidade e centra visualmente */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-6 -z-0 rounded-[40%] opacity-70 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, oklch(0.72 0.19 295 / 0.35), transparent 70%)",
+        }}
+      />
       <Canvas
-        camera={{ position: [0, 1.4, 2.8], fov: 38 }}
+        camera={{ position: [0, 0.9, 3.2], fov: 32 }}
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
         style={{ background: background ?? "transparent" }}
         shadows
       >
-        <ambientLight intensity={0.75} />
+        <ambientLight intensity={0.85} />
         <directionalLight position={[3, 4, 2]} intensity={1.15} castShadow />
         <directionalLight position={[-2, 2, -1]} intensity={0.35} color="#c9a8ff" />
 
@@ -57,15 +69,27 @@ export function Lia3DStage({
             </Html>
           }
         >
-          <LiaSceneRoot modelUrl={modelUrl} />
+          {/* Grupo de enquadramento — centra o avatar no viewport da câmera */}
+          <group position={[0, -0.75, 0]}>
+            <LiaSceneRoot modelUrl={modelUrl} />
+          </group>
           <Environment preset="studio" />
         </Suspense>
 
-        {enableControls && <OrbitControls enablePan={false} target={[0, 1, 0]} />}
+        {enableControls && (
+          <OrbitControls
+            enablePan={false}
+            enableZoom={false}
+            target={[0, 0.15, 0]}
+            minPolarAngle={Math.PI / 2.6}
+            maxPolarAngle={Math.PI / 1.9}
+          />
+        )}
       </Canvas>
     </div>
   );
 }
+
 
 function LiaSceneRoot({ modelUrl }: { modelUrl: string }) {
   const [available, setAvailable] = useState<boolean | null>(null);
