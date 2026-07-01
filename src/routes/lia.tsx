@@ -33,7 +33,7 @@ const DEMO_SIGNS = ["OLÁ", "OBRIGADO", "AMOR", "LIBRAS", "AJUDA"] as const;
 function LiaPage() {
   const [bubble, setBubble] = useState<string | undefined>("Oi! Eu sou a Lia 👋");
   return (
-    <main className="min-h-dvh">
+    <main className="min-h-dvh page-in">
       <AppNav />
 
       {/* HERO */}

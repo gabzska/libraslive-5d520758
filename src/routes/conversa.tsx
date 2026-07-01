@@ -150,7 +150,7 @@ function Conversa() {
   };
 
   return (
-    <main className="min-h-dvh">
+    <main className="min-h-dvh page-in">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Voltar
