@@ -89,16 +89,52 @@ function TraduzirPage() {
   const submit = async () => {
     const clean = text.trim();
     if (!clean) return;
+    setTranslating(true);
+    setAiError(null);
+    setAiResult(null);
+    setEditingCorrection(false);
+    setCorrectionStatus("idle");
     setHistory((h) => [{ id: crypto.randomUUID(), text: clean, at: Date.now() }, ...h].slice(0, 20));
     try {
-      await supabase.from("historico_traducao").insert({
-        direcao: "pt_libras",
-        entrada: clean,
-        saida: clean,
-        confianca: 1,
-        contexto: { tokens: tokens.map((t) => ({ w: t.word, spell: !!t.spell })) },
+      const out = await translateFn({ data: { text: clean } });
+      setAiResult(out);
+      setCorrectionText(out.glosses.join(" "));
+      try {
+        await supabase.from("historico_traducao").insert({
+          direcao: "pt_libras",
+          entrada: clean,
+          saida: out.glosses.join(" "),
+          confianca: out.confidence,
+          contexto: { intent: out.intent, notes: out.notes, tokens: tokens.map((t) => ({ w: t.word, spell: !!t.spell })) },
+        });
+      } catch { /* ignore */ }
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Falha na tradução");
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const saveCorrection = async () => {
+    if (!aiResult || !correctionText.trim()) return;
+    setCorrectionStatus("saving");
+    try {
+      await correctionFn({
+        data: {
+          direcao: "pt_libras",
+          entrada: text.trim(),
+          saida_original: aiResult.glosses.join(" "),
+          saida_corrigida: correctionText.trim().toUpperCase(),
+          contexto: { intent: aiResult.intent },
+        },
       });
-    } catch { /* ignore */ }
+      setCorrectionStatus("saved");
+      setEditingCorrection(false);
+      // Reflete correção localmente
+      setAiResult({ ...aiResult, glosses: correctionText.trim().toUpperCase().split(/\s+/) });
+    } catch {
+      setCorrectionStatus("idle");
+    }
   };
 
   return (
