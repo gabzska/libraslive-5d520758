@@ -125,6 +125,51 @@ export type Database = {
         }
         Relationships: []
       }
+      correcoes_traducao: {
+        Row: {
+          aplicada: boolean
+          contexto: Json
+          created_at: string
+          direcao: string
+          entrada: string
+          entrada_norm: string
+          id: string
+          saida_corrigida: string
+          saida_original: string | null
+          updated_at: string
+          user_id: string | null
+          votos: number
+        }
+        Insert: {
+          aplicada?: boolean
+          contexto?: Json
+          created_at?: string
+          direcao: string
+          entrada: string
+          entrada_norm: string
+          id?: string
+          saida_corrigida: string
+          saida_original?: string | null
+          updated_at?: string
+          user_id?: string | null
+          votos?: number
+        }
+        Update: {
+          aplicada?: boolean
+          contexto?: Json
+          created_at?: string
+          direcao?: string
+          entrada?: string
+          entrada_norm?: string
+          id?: string
+          saida_corrigida?: string
+          saida_original?: string | null
+          updated_at?: string
+          user_id?: string | null
+          votos?: number
+        }
+        Relationships: []
+      }
       feedbacks: {
         Row: {
           created_at: string
@@ -315,55 +360,73 @@ export type Database = {
         Row: {
           animacao_url: string | null
           aprovado: boolean
+          categoria_gramatical: string | null
           categoria_id: string | null
           confianca: number
+          contexto_uso: string | null
           created_at: string
           criado_por: string | null
           descricao: string | null
+          exemplos: Json
+          fonte: string | null
           id: string
           imagem_url: string | null
           origem: string
           palavra: string
           relacionados: string[]
+          significado: string | null
           sinonimos: string[]
           slug: string
           updated_at: string
+          variacoes_regionais: Json
           video_url: string | null
         }
         Insert: {
           animacao_url?: string | null
           aprovado?: boolean
+          categoria_gramatical?: string | null
           categoria_id?: string | null
           confianca?: number
+          contexto_uso?: string | null
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
+          exemplos?: Json
+          fonte?: string | null
           id?: string
           imagem_url?: string | null
           origem?: string
           palavra: string
           relacionados?: string[]
+          significado?: string | null
           sinonimos?: string[]
           slug: string
           updated_at?: string
+          variacoes_regionais?: Json
           video_url?: string | null
         }
         Update: {
           animacao_url?: string | null
           aprovado?: boolean
+          categoria_gramatical?: string | null
           categoria_id?: string | null
           confianca?: number
+          contexto_uso?: string | null
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
+          exemplos?: Json
+          fonte?: string | null
           id?: string
           imagem_url?: string | null
           origem?: string
           palavra?: string
           relacionados?: string[]
+          significado?: string | null
           sinonimos?: string[]
           slug?: string
           updated_at?: string
+          variacoes_regionais?: Json
           video_url?: string | null
         }
         Relationships: [
