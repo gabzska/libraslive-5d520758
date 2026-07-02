@@ -224,6 +224,78 @@ function TraduzirPage() {
                 </div>
               )}
 
+              {(translating || aiResult || aiError) && (
+                <div className="mt-5 rounded-2xl border bg-background/50 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-primary">
+                    <Wand2 className="h-3.5 w-3.5" /> Tradução contextual em Libras
+                  </p>
+                  {translating && (
+                    <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Analisando frase e consultando dicionário…
+                    </p>
+                  )}
+                  {aiError && !translating && (
+                    <p className="mt-2 text-sm text-destructive">{aiError}</p>
+                  )}
+                  {aiResult && !translating && (
+                    <div className="mt-3 space-y-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {aiResult.glosses.map((g, i) => (
+                          <span key={i} className="rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold tracking-wider text-primary">
+                            {g}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>Intenção: <span className="text-foreground">{aiResult.intent}</span></span>
+                        <span>Confiança: <span className={aiResult.confidence >= 0.8 ? "text-emerald-500" : aiResult.confidence >= 0.5 ? "text-amber-500" : "text-destructive"}>{Math.round(aiResult.confidence * 100)}%</span></span>
+                        {aiResult.notes && <span className="w-full italic">{aiResult.notes}</span>}
+                      </div>
+
+                      {!editingCorrection ? (
+                        <button
+                          onClick={() => { setEditingCorrection(true); setCorrectionStatus("idle"); }}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Não ficou certo? Ensinar a Lia →
+                        </button>
+                      ) : (
+                        <div className="rounded-xl border bg-card p-3">
+                          <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            Glosas corrigidas (separadas por espaço)
+                          </label>
+                          <input
+                            value={correctionText}
+                            onChange={(e) => setCorrectionText(e.target.value)}
+                            className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            placeholder="EU QUERER ÁGUA POR-FAVOR"
+                          />
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={saveCorrection}
+                              disabled={correctionStatus === "saving" || !correctionText.trim()}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                            >
+                              {correctionStatus === "saving" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                              Salvar correção
+                            </button>
+                            <button
+                              onClick={() => setEditingCorrection(false)}
+                              className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {correctionStatus === "saved" && (
+                        <p className="text-xs text-emerald-500">✓ Obrigado! A Lia vai aprender com sua correção.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {finalText && (
                 <p className="mt-3 text-xs text-muted-foreground">Última fala reconhecida: "{finalText}"</p>
               )}
