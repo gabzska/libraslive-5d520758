@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Mic, MicOff, Send, Sparkles, Trash2, BookOpenText } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Mic, MicOff, Send, Sparkles, Trash2, BookOpenText, Wand2, Check, Loader2 } from "lucide-react";
 import { AppNav } from "@/components/AppNav";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { supabase } from "@/integrations/supabase/client";
+import { translateToGlosses, submitCorrection } from "@/lib/libras.functions";
 
 export const Route = createFileRoute("/traduzir")({
   head: () => ({
