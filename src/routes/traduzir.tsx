@@ -35,6 +35,17 @@ interface SignRow { palavra: string; slug: string; sinonimos: string[] | null }
 function TraduzirPage() {
   const [text, setText] = useState("");
   const [history, setHistory] = useState<{ id: string; text: string; at: number }[]>([]);
+  const [aiResult, setAiResult] = useState<{ glosses: string[]; intent: string; notes?: string; confidence: number } | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [editingCorrection, setEditingCorrection] = useState(false);
+  const [correctionText, setCorrectionText] = useState("");
+  const [correctionStatus, setCorrectionStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const translateFn = useServerFn(translateToGlosses);
+  const correctionFn = useServerFn(submitCorrection);
+  const [text, setText] = useState("");
+  const [history, setHistory] = useState<{ id: string; text: string; at: number }[]>([]);
 
   const { listening, interim, finalText, supported, start, stop } = useSpeechRecognition({
     lang: "pt-BR",
