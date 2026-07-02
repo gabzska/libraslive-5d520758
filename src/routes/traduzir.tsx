@@ -44,8 +44,6 @@ function TraduzirPage() {
 
   const translateFn = useServerFn(translateToGlosses);
   const correctionFn = useServerFn(submitCorrection);
-  const [text, setText] = useState("");
-  const [history, setHistory] = useState<{ id: string; text: string; at: number }[]>([]);
 
   const { listening, interim, finalText, supported, start, stop } = useSpeechRecognition({
     lang: "pt-BR",
