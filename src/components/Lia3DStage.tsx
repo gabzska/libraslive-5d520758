@@ -4,6 +4,7 @@ import { OrbitControls, Environment, useGLTF, Html, useAnimations } from "@react
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { subscribeLia, getSign } from "@/lib/lia-sign-library";
+import { LIA_AVATAR_URL } from "@/lib/lia-config";
 import {
   subscribeAnimation,
   getAnimation,
@@ -32,7 +33,7 @@ interface Lia3DStageProps {
  * Enquanto isso, o placeholder reage às mesmas chamadas — mesmo código.
  */
 export function Lia3DStage({
-  modelUrl = "/models/lia.glb",
+  modelUrl = LIA_AVATAR_URL,
   className,
   enableControls = false,
   background = null,
