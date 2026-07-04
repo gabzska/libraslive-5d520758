@@ -4,6 +4,7 @@ import { OrbitControls, Environment, useGLTF, Html, useAnimations } from "@react
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { subscribeLia, getSign } from "@/lib/lia-sign-library";
+import { LIA_AVATAR_URL } from "@/lib/lia-config";
 import {
   subscribeAnimation,
   getAnimation,
