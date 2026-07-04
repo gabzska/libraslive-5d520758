@@ -33,7 +33,7 @@ interface Lia3DStageProps {
  * Enquanto isso, o placeholder reage às mesmas chamadas — mesmo código.
  */
 export function Lia3DStage({
-  modelUrl = "/models/lia.glb",
+  modelUrl = LIA_AVATAR_URL,
   className,
   enableControls = false,
   background = null,
