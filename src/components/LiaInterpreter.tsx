@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import liaAsset from "@/assets/lia-mascot.png.asset.json";
+import { Accessibility, Brain, Hand, Heart, Languages } from "lucide-react";
 import { subscribeLia, type LiaState, type SignDefinition } from "@/lib/lia-sign-library";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ interface LiaInterpreterProps {
   className?: string;
   /** Posição do balão em relação ao retrato */
   bubbleSide?: "right" | "left" | "top" | "bottom";
-  /** "circle" = retrato circular (avatar). "portrait" = enquadramento retrato 3:4 mostrando torso e mãos. */
+  /** "circle" = retrato circular. "portrait" = enquadramento retrato 3:4. */
   variant?: "circle" | "portrait";
 }
 
@@ -35,13 +35,12 @@ const PORTRAIT_SIZE_MAP: Record<NonNullable<LiaInterpreterProps["size"]>, string
 };
 
 /**
- * <LiaInterpreter /> — Intérprete virtual oficial do LibrasLive.
+ * <LiaInterpreter /> — Avatar visual profissional do LibrasLive.
  *
- * Avatar humano realista (não mascote cartoon). Hoje renderiza um retrato 2D
- * com micro-movimentos sutis (respiração, leve balanço de tronco, piscar
- * natural, halo de estado). A API `playSign(gloss)` dispara movimentos extras
- * que simulam o ato de sinalizar. Quando um avatar 3D rigado estiver
- * disponível em <Lia3DStage />, esta camada 2D segue como fallback e marca.
+ * A personagem Lia foi substituída por uma identidade visual abstrata,
+ * clean e tecnológica: gradiente sutil, ícones minimalistas e micro-
+ * animações. O componente preserva a mesma API (balão, estado, tamanhos)
+ * para não quebrar os pontos de uso existentes.
  */
 export function LiaInterpreter({
   state = "idle",
@@ -74,9 +73,6 @@ export function LiaInterpreter({
 
   const isPortrait = variant === "portrait";
   const frameSize = isPortrait ? PORTRAIT_SIZE_MAP[size] : SIZE_MAP[size];
-  // Foco da imagem no rosto da Lia (figura ocupa lado direito do PNG original).
-  const objectPosition = isPortrait ? "62% 22%" : "62% 18%";
-  const imgScale = isPortrait ? "scale-[1.05]" : "scale-[2.1]";
 
   return (
     <div
@@ -109,7 +105,7 @@ export function LiaInterpreter({
             "animate-[lia-sway_6s_ease-in-out_infinite]",
           )}
         >
-          {/* Respiração */}
+          {/* Frame com visual abstrato */}
           <div
             className={cn(
               "relative overflow-hidden border-2 border-primary/30 bg-gradient-to-b from-[oklch(0.97_0.025_295)] to-[oklch(0.92_0.05_295)] shadow-glow",
@@ -119,21 +115,46 @@ export function LiaInterpreter({
               effectiveState === "signing" && "animate-[lia-sign_0.9s_ease-in-out_infinite]",
             )}
           >
-            <img
-              src={liaAsset.url}
-              alt="Lia, intérprete virtual de Libras do LibrasLive"
-              className={cn(
-                "h-full w-full object-cover select-none pointer-events-none transition-transform duration-700",
-                imgScale,
-              )}
-              style={{ objectPosition }}
-              draggable={false}
-            />
-            {/* Camada de piscar natural */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[oklch(0.88_0.04_290)] mix-blend-multiply opacity-0 animate-[lia-blink_5.5s_ease-in-out_infinite]"
-            />
+            {/* Gradient base */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-primary/5 to-background opacity-90" />
+
+            {/* Central icon cluster */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative">
+                <div
+                  aria-hidden
+                  className="absolute inset-0 -m-3 rounded-full border border-primary/20 animate-[spin_15s_linear_infinite]"
+                />
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.72_0.18_280)] shadow-glow sm:h-14 sm:w-14">
+                  <Accessibility className="h-6 w-6 text-primary-foreground sm:h-7 sm:w-7" />
+                </div>
+                <div
+                  aria-hidden
+                  className="absolute -left-6 -top-3 rounded-xl border bg-card/80 p-1.5 shadow-card backdrop-blur animate-[float-soft_5s_ease-in-out_infinite]"
+                >
+                  <Hand className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div
+                  aria-hidden
+                  className="absolute -right-5 top-0 rounded-xl border bg-card/80 p-1.5 shadow-card backdrop-blur animate-[float-soft_6s_ease-in-out_infinite_0.5s]"
+                >
+                  <Languages className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div
+                  aria-hidden
+                  className="absolute -bottom-4 -left-4 rounded-xl border bg-card/80 p-1.5 shadow-card backdrop-blur animate-[float-soft_7s_ease-in-out_infinite_1s]"
+                >
+                  <Brain className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div
+                  aria-hidden
+                  className="absolute -bottom-3 -right-5 rounded-xl border bg-card/80 p-1.5 shadow-card backdrop-blur animate-[float-soft_5.5s_ease-in-out_infinite_1.5s]"
+                >
+                  <Heart className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </div>
+            </div>
+
             {/* Vinheta suave para integrar ao tema */}
             <span
               aria-hidden
