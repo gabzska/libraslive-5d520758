@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Accessibility, Brain, Hand, Heart, Languages, Sparkles } from "lucide-react";
+import { Accessibility, Brain, Hand, Heart, Languages } from "lucide-react";
 import { subscribeLia, type LiaState, type SignDefinition } from "@/lib/lia-sign-library";
 import { cn } from "@/lib/utils";
 
