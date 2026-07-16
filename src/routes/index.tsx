@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Hand, Mic, Languages, GraduationCap, Stethoscope, BookOpen, Library, ArrowRight, Code2, Heart } from "lucide-react";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
 import { AppNav } from "@/components/AppNav";
+import { NewsletterForm } from "@/components/NewsletterForm";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -164,6 +165,13 @@ function Index() {
           </ul>
         </div>
       </section>
+
+      {/* NEWSLETTER */}
+      <section className="mx-auto max-w-6xl px-5 pb-14">
+        <NewsletterForm />
+      </section>
+
+
 
       <footer className="border-t bg-card/40 backdrop-blur">
         <div className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted-foreground">
