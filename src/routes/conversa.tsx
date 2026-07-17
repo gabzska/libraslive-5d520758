@@ -102,6 +102,8 @@ function Conversa() {
       if (firstGloss === "OLÁ" || firstGloss === "OI") void playAnimation("Ola");
       else if (firstGloss.includes("TUDO") || firstGloss === "BEM") void playAnimation("TudoBem");
       if (autoSpeak) speak(out.sentence);
+      // Ecoa a frase reconstruída no avatar VLibras (validação visual bidirecional).
+      signOnVLibras(out.sentence);
     } catch (e: any) {
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign",
