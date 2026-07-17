@@ -324,7 +324,7 @@ function TraduzirPage() {
           </div>
 
           <div className="md:col-span-2">
-            <VLibrasPlayer text={text} hint="O avatar oficial do VLibras abre no canto e sinaliza a frase digitada. Em palavras sem sinal próprio, o alfabeto manual é soletrado." />
+            <VLibrasPlayer text={text} hint="O avatar oficial do VLibras fica embutido neste painel e sinaliza a frase digitada automaticamente." />
           </div>
         </div>
       </section>

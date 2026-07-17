@@ -8,10 +8,7 @@ interface Props {
   hint?: string;
 }
 
-/**
- * Painel visual que controla o avatar VLibras (que vive flutuante no canto).
- * Sempre que `text` muda (com debounce) dispara a tradução e abre o widget.
- */
+/** Painel embutido que ancora a instância global oficial do VLibras no layout. */
 export function VLibrasPlayer({ text, autoPlay = true, hint }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const lastRef = useRef<string>("");
