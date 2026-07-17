@@ -287,6 +287,33 @@ export type Database = {
         }
         Relationships: []
       }
+      inscricoes_novidades: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          interesse: string | null
+          nome: string
+          origem: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          interesse?: string | null
+          nome: string
+          origem?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          interesse?: string | null
+          nome?: string
+          origem?: string | null
+        }
+        Relationships: []
+      }
       progresso_educacao: {
         Row: {
           acertos: number
