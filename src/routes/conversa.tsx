@@ -138,6 +138,14 @@ function Conversa() {
 
   useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }, []);
 
+  // Abre o widget VLibras automaticamente ao entrar na Conversa.
+  // O widget é montado no RootShell (persistente entre rotas) — aqui apenas
+  // garantimos que o painel esteja visível para tradução em tempo real.
+  useEffect(() => {
+    const t = setTimeout(() => openVLibras(), 600);
+    return () => clearTimeout(t);
+  }, []);
+
   // edição inline para aprendizado contínuo
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
