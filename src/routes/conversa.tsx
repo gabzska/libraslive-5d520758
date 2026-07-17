@@ -12,6 +12,7 @@ import { speak } from "@/lib/tts";
 import { reconstructSentence } from "@/lib/libras.functions";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
 import { LiaInterpreter } from "@/components/LiaInterpreter";
+import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { playSign, type LiaState } from "@/lib/lia-sign-library";
 import { playAnimation } from "@/lib/lia-animations";
 
@@ -51,6 +52,7 @@ function Conversa() {
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [lowLight, setLowLight] = useState(true);
   const [transcript, setTranscript] = useState<Entry[]>([]);
+  const [vlibrasText, setVlibrasText] = useState("");
 
   // Gloss buffer + debounce
   const bufferRef = useRef<GlossEvent[]>([]);
@@ -134,6 +136,7 @@ function Conversa() {
     lang: "pt-BR",
     onFinal: (text) => {
       setTranscript((t) => [{ id: crypto.randomUUID(), from: "voice" as const, text, at: Date.now() }, ...t].slice(0, 60));
+      setVlibrasText(text);
       signOnVLibras(text);
     },
   });
@@ -369,9 +372,12 @@ function Conversa() {
             )}
           </div>
 
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            O avatar oficial VLibras já está ativo — abrimos automaticamente e ele sinaliza cada frase em tempo real.
-          </p>
+          <div className="mt-5">
+            <VLibrasPlayer
+              text={vlibrasText || voice.finalText || voice.interim}
+              hint="A fala ou texto em português é enviado automaticamente para este avatar, sem ícone flutuante, pop-up ou aba externa."
+            />
+          </div>
         </div>
       </section>
 

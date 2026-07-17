@@ -192,3 +192,50 @@
   @apply text-primary bg-primary/10;
 }
 
+/* === VLibras embutido: mantém uma única instância oficial fora do fluxo flutuante === */
+#vlibras-global-parking {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 320px;
+  height: 480px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.libraslive-vlibras-host [data-libraslive-vlibras="root"],
+[data-libraslive-vlibras="root"].libraslive-vlibras-embedded {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 1 !important;
+}
+
+[data-libraslive-vlibras="root"].libraslive-vlibras-embedded [vw-access-button] {
+  display: none !important;
+}
+
+[data-libraslive-vlibras="root"].libraslive-vlibras-embedded [vw-plugin-wrapper],
+[data-libraslive-vlibras="root"].libraslive-vlibras-embedded [vw-plugin-wrapper].active {
+  display: flex !important;
+  float: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  border-radius: var(--radius-2xl) !important;
+  box-shadow: none !important;
+}
+
+[data-libraslive-vlibras="root"].libraslive-vlibras-embedded [vp] {
+  width: 100% !important;
+  height: 100% !important;
+}
+
