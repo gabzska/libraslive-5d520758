@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Camera, CameraOff, Mic, MicOff, Volume2, Hand, ArrowLeft, Sparkles,
-  Languages, Brain, Loader2, Check, Pencil, Activity, Sun,
+  Languages, Brain, Loader2, Check, Pencil, Activity, Sun, Send,
 } from "lucide-react";
 import { useHolisticRecognition, type GlossEvent } from "@/hooks/use-holistic-recognition";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -53,6 +53,7 @@ function Conversa() {
   const [lowLight, setLowLight] = useState(true);
   const [transcript, setTranscript] = useState<Entry[]>([]);
   const [vlibrasText, setVlibrasText] = useState("");
+  const [ptInput, setPtInput] = useState("");
 
   // Gloss buffer + debounce
   const bufferRef = useRef<GlossEvent[]>([]);
@@ -140,6 +141,14 @@ function Conversa() {
       signOnVLibras(text);
     },
   });
+
+  const sendPortugueseToVLibras = () => {
+    const clean = ptInput.trim();
+    if (!clean) return;
+    setTranscript((t) => [{ id: crypto.randomUUID(), from: "voice" as const, text: clean, at: Date.now() }, ...t].slice(0, 60));
+    setVlibrasText(clean);
+    signOnVLibras(clean);
+  };
 
   useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }, []);
 
@@ -356,6 +365,27 @@ function Conversa() {
             )}
           </div>
 
+          <div className="mt-4 rounded-2xl border bg-background/60 p-4">
+            <label htmlFor="pt-to-vlibras" className="text-xs font-medium uppercase tracking-wider text-primary">
+              Mensagem em português
+            </label>
+            <textarea
+              id="pt-to-vlibras"
+              value={ptInput}
+              onChange={(e) => setPtInput(e.target.value)}
+              placeholder="Digite uma frase e envie para o avatar sinalizar aqui mesmo."
+              className="mt-2 w-full resize-none rounded-xl border bg-card/80 p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              rows={3}
+            />
+            <button
+              onClick={sendPortugueseToVLibras}
+              disabled={!ptInput.trim()}
+              className="mt-3 inline-flex items-center gap-2 rounded-full gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" /> Enviar para VLibras
+            </button>
+          </div>
+
           {voice.error && <p className="mt-3 text-sm text-destructive">Erro: {voice.error}</p>}
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -374,7 +404,7 @@ function Conversa() {
 
           <div className="mt-5">
             <VLibrasPlayer
-              text={vlibrasText || voice.finalText || voice.interim}
+              text={ptInput || vlibrasText || voice.finalText || voice.interim}
               hint="A fala ou texto em português é enviado automaticamente para este avatar, sem ícone flutuante, pop-up ou aba externa."
             />
           </div>
