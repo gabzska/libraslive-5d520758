@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useHolisticRecognition, type GlossEvent } from "@/hooks/use-holistic-recognition";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
-import { translateToVLibras } from "@/lib/vlibras";
+import { translateToVLibras, openVLibras, signOnVLibras } from "@/lib/vlibras";
 import { speak } from "@/lib/tts";
 import { reconstructSentence } from "@/lib/libras.functions";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
@@ -102,6 +102,8 @@ function Conversa() {
       if (firstGloss === "OLÁ" || firstGloss === "OI") void playAnimation("Ola");
       else if (firstGloss.includes("TUDO") || firstGloss === "BEM") void playAnimation("TudoBem");
       if (autoSpeak) speak(out.sentence);
+      // Ecoa a frase reconstruída no avatar VLibras (validação visual bidirecional).
+      signOnVLibras(out.sentence);
     } catch (e: any) {
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign",
@@ -132,11 +134,19 @@ function Conversa() {
     lang: "pt-BR",
     onFinal: (text) => {
       setTranscript((t) => [{ id: crypto.randomUUID(), from: "voice" as const, text, at: Date.now() }, ...t].slice(0, 60));
-      translateToVLibras(text);
+      signOnVLibras(text);
     },
   });
 
   useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }, []);
+
+  // Abre o widget VLibras automaticamente ao entrar na Conversa.
+  // O widget é montado no RootShell (persistente entre rotas) — aqui apenas
+  // garantimos que o painel esteja visível para tradução em tempo real.
+  useEffect(() => {
+    const t = setTimeout(() => openVLibras(), 600);
+    return () => clearTimeout(t);
+  }, []);
 
   // edição inline para aprendizado contínuo
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -360,7 +370,7 @@ function Conversa() {
           </div>
 
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Use o botão VLibras no canto inferior direito para ver o avatar sinalizando.
+            O avatar oficial VLibras já está ativo — abrimos automaticamente e ele sinaliza cada frase em tempo real.
           </p>
         </div>
       </section>
