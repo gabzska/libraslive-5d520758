@@ -370,7 +370,7 @@ function Conversa() {
           </div>
 
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Use o botão VLibras no canto inferior direito para ver o avatar sinalizando.
+            O avatar oficial VLibras já está ativo — abrimos automaticamente e ele sinaliza cada frase em tempo real.
           </p>
         </div>
       </section>
