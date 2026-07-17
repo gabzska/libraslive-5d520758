@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useHolisticRecognition, type GlossEvent } from "@/hooks/use-holistic-recognition";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
-import { translateToVLibras } from "@/lib/vlibras";
+import { translateToVLibras, openVLibras, signOnVLibras } from "@/lib/vlibras";
 import { speak } from "@/lib/tts";
 import { reconstructSentence } from "@/lib/libras.functions";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
