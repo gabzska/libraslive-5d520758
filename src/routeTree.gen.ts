@@ -9,58 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TraduzirRouteImport } from './routes/traduzir'
-import { Route as LiaRouteImport } from './routes/lia'
-import { Route as HospitalRouteImport } from './routes/hospital'
-import { Route as EducacaoRouteImport } from './routes/educacao'
-import { Route as ConversaRouteImport } from './routes/conversa'
-import { Route as BibliotecaRouteImport } from './routes/biblioteca'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AprenderRouteImport } from './routes/aprender'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
-import { Route as BibliotecaAdminRouteImport } from './routes/biblioteca.admin'
-import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AprenderRouteImport } from './routes/aprender'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BibliotecaRouteImport } from './routes/biblioteca'
+import { Route as ConversaRouteImport } from './routes/conversa'
+import { Route as EducacaoRouteImport } from './routes/educacao'
+import { Route as HospitalRouteImport } from './routes/hospital'
+import { Route as LiaRouteImport } from './routes/lia'
+import { Route as TraduzirRouteImport } from './routes/traduzir'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
-import { Route as ApiPublicTranslateRouteImport } from './routes/api/public/translate'
-import { Route as ApiPublicSignsRouteImport } from './routes/api/public/signs'
-import { Route as ApiPublicHospitalPhrasesRouteImport } from './routes/api/public/hospital-phrases'
+import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as BibliotecaAdminRouteImport } from './routes/biblioteca.admin'
+import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
 import { Route as ApiPublicAulasRouteImport } from './routes/api/public/aulas'
+import { Route as ApiPublicHospitalPhrasesRouteImport } from './routes/api/public/hospital-phrases'
+import { Route as ApiPublicSignsRouteImport } from './routes/api/public/signs'
+import { Route as ApiPublicTranslateRouteImport } from './routes/api/public/translate'
 
-const TraduzirRoute = TraduzirRouteImport.update({
-  id: '/traduzir',
-  path: '/traduzir',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LiaRoute = LiaRouteImport.update({
-  id: '/lia',
-  path: '/lia',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HospitalRoute = HospitalRouteImport.update({
-  id: '/hospital',
-  path: '/hospital',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EducacaoRoute = EducacaoRouteImport.update({
-  id: '/educacao',
-  path: '/educacao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConversaRoute = ConversaRouteImport.update({
-  id: '/conversa',
-  path: '/conversa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BibliotecaRoute = BibliotecaRouteImport.update({
-  id: '/biblioteca',
-  path: '/biblioteca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AprenderRoute = AprenderRouteImport.update({
@@ -68,43 +42,64 @@ const AprenderRoute = AprenderRouteImport.update({
   path: '/aprender',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BibliotecaRoute = BibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EducacaoSlugRoute = EducacaoSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => EducacaoRoute,
+const ConversaRoute = ConversaRouteImport.update({
+  id: '/conversa',
+  path: '/conversa',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const BibliotecaAdminRoute = BibliotecaAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => BibliotecaRoute,
+const EducacaoRoute = EducacaoRouteImport.update({
+  id: '/educacao',
+  path: '/educacao',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const HospitalRoute = HospitalRouteImport.update({
+  id: '/hospital',
+  path: '/hospital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiaRoute = LiaRouteImport.update({
+  id: '/lia',
+  path: '/lia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraduzirRoute = TraduzirRouteImport.update({
+  id: '/traduzir',
+  path: '/traduzir',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
   id: '/conta',
   path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicTranslateRoute = ApiPublicTranslateRouteImport.update({
-  id: '/api/public/translate',
-  path: '/api/public/translate',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicSignsRoute = ApiPublicSignsRouteImport.update({
-  id: '/api/public/signs',
-  path: '/api/public/signs',
+const BibliotecaAdminRoute = BibliotecaAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => BibliotecaRoute,
+} as any)
+const EducacaoSlugRoute = EducacaoSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => EducacaoRoute,
+} as any)
+const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
+  id: '/api/public/aulas',
+  path: '/api/public/aulas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHospitalPhrasesRoute =
@@ -113,9 +108,14 @@ const ApiPublicHospitalPhrasesRoute =
     path: '/api/public/hospital-phrases',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
-  id: '/api/public/aulas',
-  path: '/api/public/aulas',
+const ApiPublicSignsRoute = ApiPublicSignsRouteImport.update({
+  id: '/api/public/signs',
+  path: '/api/public/signs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTranslateRoute = ApiPublicTranslateRouteImport.update({
+  id: '/api/public/translate',
+  path: '/api/public/translate',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -258,60 +258,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/traduzir': {
-      id: '/traduzir'
-      path: '/traduzir'
-      fullPath: '/traduzir'
-      preLoaderRoute: typeof TraduzirRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lia': {
-      id: '/lia'
-      path: '/lia'
-      fullPath: '/lia'
-      preLoaderRoute: typeof LiaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hospital': {
-      id: '/hospital'
-      path: '/hospital'
-      fullPath: '/hospital'
-      preLoaderRoute: typeof HospitalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/educacao': {
-      id: '/educacao'
-      path: '/educacao'
-      fullPath: '/educacao'
-      preLoaderRoute: typeof EducacaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/conversa': {
-      id: '/conversa'
-      path: '/conversa'
-      fullPath: '/conversa'
-      preLoaderRoute: typeof ConversaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/biblioteca': {
-      id: '/biblioteca'
-      path: '/biblioteca'
-      fullPath: '/biblioteca'
-      preLoaderRoute: typeof BibliotecaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/aprender': {
-      id: '/aprender'
-      path: '/aprender'
-      fullPath: '/aprender'
-      preLoaderRoute: typeof AprenderRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -321,33 +272,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/aprender': {
+      id: '/aprender'
+      path: '/aprender'
+      fullPath: '/aprender'
+      preLoaderRoute: typeof AprenderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/educacao/$slug': {
-      id: '/educacao/$slug'
-      path: '/$slug'
-      fullPath: '/educacao/$slug'
-      preLoaderRoute: typeof EducacaoSlugRouteImport
-      parentRoute: typeof EducacaoRoute
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/biblioteca/admin': {
-      id: '/biblioteca/admin'
-      path: '/admin'
-      fullPath: '/biblioteca/admin'
-      preLoaderRoute: typeof BibliotecaAdminRouteImport
-      parentRoute: typeof BibliotecaRoute
+    '/biblioteca': {
+      id: '/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof BibliotecaRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/usuarios': {
-      id: '/_authenticated/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/conversa': {
+      id: '/conversa'
+      path: '/conversa'
+      fullPath: '/conversa'
+      preLoaderRoute: typeof ConversaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/educacao': {
+      id: '/educacao'
+      path: '/educacao'
+      fullPath: '/educacao'
+      preLoaderRoute: typeof EducacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospital': {
+      id: '/hospital'
+      path: '/hospital'
+      fullPath: '/hospital'
+      preLoaderRoute: typeof HospitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lia': {
+      id: '/lia'
+      path: '/lia'
+      fullPath: '/lia'
+      preLoaderRoute: typeof LiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traduzir': {
+      id: '/traduzir'
+      path: '/traduzir'
+      fullPath: '/traduzir'
+      preLoaderRoute: typeof TraduzirRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/conta': {
       id: '/_authenticated/conta'
@@ -356,18 +335,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/translate': {
-      id: '/api/public/translate'
-      path: '/api/public/translate'
-      fullPath: '/api/public/translate'
-      preLoaderRoute: typeof ApiPublicTranslateRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/usuarios': {
+      id: '/_authenticated/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/signs': {
-      id: '/api/public/signs'
-      path: '/api/public/signs'
-      fullPath: '/api/public/signs'
-      preLoaderRoute: typeof ApiPublicSignsRouteImport
+    '/biblioteca/admin': {
+      id: '/biblioteca/admin'
+      path: '/admin'
+      fullPath: '/biblioteca/admin'
+      preLoaderRoute: typeof BibliotecaAdminRouteImport
+      parentRoute: typeof BibliotecaRoute
+    }
+    '/educacao/$slug': {
+      id: '/educacao/$slug'
+      path: '/$slug'
+      fullPath: '/educacao/$slug'
+      preLoaderRoute: typeof EducacaoSlugRouteImport
+      parentRoute: typeof EducacaoRoute
+    }
+    '/api/public/aulas': {
+      id: '/api/public/aulas'
+      path: '/api/public/aulas'
+      fullPath: '/api/public/aulas'
+      preLoaderRoute: typeof ApiPublicAulasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hospital-phrases': {
@@ -377,11 +370,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHospitalPhrasesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/aulas': {
-      id: '/api/public/aulas'
-      path: '/api/public/aulas'
-      fullPath: '/api/public/aulas'
-      preLoaderRoute: typeof ApiPublicAulasRouteImport
+    '/api/public/signs': {
+      id: '/api/public/signs'
+      path: '/api/public/signs'
+      fullPath: '/api/public/signs'
+      preLoaderRoute: typeof ApiPublicSignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/translate': {
+      id: '/api/public/translate'
+      path: '/api/public/translate'
+      fullPath: '/api/public/translate'
+      preLoaderRoute: typeof ApiPublicTranslateRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

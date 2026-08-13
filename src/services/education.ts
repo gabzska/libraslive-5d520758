@@ -61,9 +61,12 @@ export async function createAula(input: {
   descricao?: string;
 }) {
   const slug = slugify(input.titulo);
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  if (!userId) throw new Error("Entre na sua conta para publicar uma aula.");
   const { data, error } = await supabase
     .from("aulas")
-    .insert({ ...input, slug, publica: true })
+    .insert({ ...input, slug, publica: true, criado_por: userId })
     .select("*")
     .single();
   if (error) throw error;
