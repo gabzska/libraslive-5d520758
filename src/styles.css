@@ -96,15 +96,35 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   html, body { font-family: var(--font-sans); }
   body {
     background: var(--gradient-bg);
     background-attachment: fixed;
     color: var(--color-foreground);
     min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: color-mix(in oklab, var(--color-primary) 25%, transparent); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 
 @utility gradient-primary {
   background-image: var(--gradient-primary);
