@@ -259,3 +259,29 @@
   height: 100% !important;
 }
 
+
+/* === Sistema visual compartilhado === */
+@utility surface {
+  @apply rounded-2xl border bg-card shadow-card;
+}
+@utility surface-interactive {
+  @apply surface transition duration-200 hover:-translate-y-0.5 hover:border-primary/30;
+}
+@utility btn-base {
+  @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60;
+}
+@utility btn-primary {
+  @apply btn-base gradient-primary text-primary-foreground shadow-glow hover:brightness-105;
+}
+@utility btn-secondary {
+  @apply btn-base border bg-card font-medium hover:bg-accent;
+}
+@utility btn-ghost {
+  @apply btn-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground;
+}
+@utility field-input {
+  @apply h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-ring/40 disabled:bg-muted/50 disabled:text-muted-foreground;
+}
+@utility badge-soft {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary;
+}
