@@ -259,7 +259,9 @@ export const submitCorrection = createServerFn({ method: "POST" })
       .limit(1);
 
     if (existing?.[0]) {
-      const { error } = await supabase
+      // UPDATE é restrito no banco: usamos o cliente privilegiado do servidor.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin
         .from("correcoes_traducao")
         .update({ votos: existing[0].votos + 1 })
         .eq("id", existing[0].id);

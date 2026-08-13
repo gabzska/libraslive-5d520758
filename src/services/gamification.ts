@@ -155,7 +155,12 @@ export function applyEvent(prev: GamificationState, fonte: XpEvent["fonte"], ext
 
 export async function syncRanking(s: GamificationState): Promise<void> {
   if (!s.apelido) return;
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  // Ranking exige conta: sem sessão, mantemos apenas o progresso local.
+  if (!userId) return;
   const payload = {
+    user_id: userId,
     apelido: s.apelido,
     xp: s.xp,
     nivel: levelFromXp(s.xp),
@@ -165,7 +170,7 @@ export async function syncRanking(s: GamificationState): Promise<void> {
   };
   const { error } = await supabase
     .from("ranking_publico")
-    .upsert(payload as never, { onConflict: "apelido" });
+    .upsert(payload as never, { onConflict: "user_id" });
   if (error) throw error;
 }
 
