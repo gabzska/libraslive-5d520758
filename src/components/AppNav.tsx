@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Hand, Moon, Sun, Menu, X } from "lucide-react";
+import { Hand, Moon, Sun, Menu, X, UserRound, LogIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSession } from "@/hooks/use-session";
 
 const LINKS = [
   { to: "/", label: "Início" },
@@ -13,10 +14,12 @@ const LINKS = [
   { to: "/hospital", label: "Hospital" },
 ] as const;
 
+
 export function AppNav() {
   const [dark, setDark] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user } = useSession();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -73,6 +76,24 @@ export function AppNav() {
           >
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          {user ? (
+            <Link
+              to="/conta"
+              aria-label="Minha conta"
+              className="inline-flex h-10 items-center gap-2 rounded-full border bg-card/70 px-3 text-sm font-medium transition hover:bg-accent"
+            >
+              <UserRound className="h-4 w-4" />
+              <span className="hidden sm:inline">Conta</span>
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="inline-flex h-10 items-center gap-2 rounded-full gradient-primary px-4 text-sm font-semibold text-primary-foreground shadow-glow transition hover:brightness-105 active:scale-[0.99]"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Entrar</span>
+            </Link>
+          )}
           <button
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? "Fechar menu" : "Abrir menu"}

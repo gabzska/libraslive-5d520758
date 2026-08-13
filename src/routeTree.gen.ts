@@ -15,10 +15,14 @@ import { Route as HospitalRouteImport } from './routes/hospital'
 import { Route as EducacaoRouteImport } from './routes/educacao'
 import { Route as ConversaRouteImport } from './routes/conversa'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AprenderRouteImport } from './routes/aprender'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EducacaoSlugRouteImport } from './routes/educacao.$slug'
 import { Route as BibliotecaAdminRouteImport } from './routes/biblioteca.admin'
+import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
 import { Route as ApiPublicTranslateRouteImport } from './routes/api/public/translate'
 import { Route as ApiPublicSignsRouteImport } from './routes/api/public/signs'
 import { Route as ApiPublicHospitalPhrasesRouteImport } from './routes/api/public/hospital-phrases'
@@ -54,9 +58,18 @@ const BibliotecaRoute = BibliotecaRouteImport.update({
   path: '/biblioteca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AprenderRoute = AprenderRouteImport.update({
   id: '/aprender',
   path: '/aprender',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -73,6 +86,16 @@ const BibliotecaAdminRoute = BibliotecaAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => BibliotecaRoute,
+} as any)
+const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicTranslateRoute = ApiPublicTranslateRouteImport.update({
   id: '/api/public/translate',
@@ -99,12 +122,15 @@ const ApiPublicAulasRoute = ApiPublicAulasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
+  '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/conta': typeof AuthenticatedContaRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -115,12 +141,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aprender': typeof AprenderRoute
+  '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/conta': typeof AuthenticatedContaRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -131,13 +160,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/aprender': typeof AprenderRoute
+  '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRouteWithChildren
   '/conversa': typeof ConversaRoute
   '/educacao': typeof EducacaoRouteWithChildren
   '/hospital': typeof HospitalRoute
   '/lia': typeof LiaRoute
   '/traduzir': typeof TraduzirRoute
+  '/_authenticated/conta': typeof AuthenticatedContaRoute
+  '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/biblioteca/admin': typeof BibliotecaAdminRoute
   '/educacao/$slug': typeof EducacaoSlugRoute
   '/api/public/aulas': typeof ApiPublicAulasRoute
@@ -150,12 +183,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/aprender'
+    | '/auth'
     | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/conta'
+    | '/usuarios'
     | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -166,12 +202,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/aprender'
+    | '/auth'
     | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/conta'
+    | '/usuarios'
     | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -181,13 +220,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/aprender'
+    | '/auth'
     | '/biblioteca'
     | '/conversa'
     | '/educacao'
     | '/hospital'
     | '/lia'
     | '/traduzir'
+    | '/_authenticated/conta'
+    | '/_authenticated/usuarios'
     | '/biblioteca/admin'
     | '/educacao/$slug'
     | '/api/public/aulas'
@@ -198,7 +241,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AprenderRoute: typeof AprenderRoute
+  AuthRoute: typeof AuthRoute
   BibliotecaRoute: typeof BibliotecaRouteWithChildren
   ConversaRoute: typeof ConversaRoute
   EducacaoRoute: typeof EducacaoRouteWithChildren
@@ -255,11 +300,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BibliotecaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/aprender': {
       id: '/aprender'
       path: '/aprender'
       fullPath: '/aprender'
       preLoaderRoute: typeof AprenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -282,6 +341,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/biblioteca/admin'
       preLoaderRoute: typeof BibliotecaAdminRouteImport
       parentRoute: typeof BibliotecaRoute
+    }
+    '/_authenticated/usuarios': {
+      id: '/_authenticated/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conta': {
+      id: '/_authenticated/conta'
+      path: '/conta'
+      fullPath: '/conta'
+      preLoaderRoute: typeof AuthenticatedContaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/translate': {
       id: '/api/public/translate'
@@ -314,6 +387,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedContaRoute: typeof AuthenticatedContaRoute
+  AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedContaRoute: AuthenticatedContaRoute,
+  AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 interface BibliotecaRouteChildren {
   BibliotecaAdminRoute: typeof BibliotecaAdminRoute
 }
@@ -340,7 +426,9 @@ const EducacaoRouteWithChildren = EducacaoRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AprenderRoute: AprenderRoute,
+  AuthRoute: AuthRoute,
   BibliotecaRoute: BibliotecaRouteWithChildren,
   ConversaRoute: ConversaRoute,
   EducacaoRoute: EducacaoRouteWithChildren,
@@ -355,3 +443,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -96,15 +96,35 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   html, body { font-family: var(--font-sans); }
   body {
     background: var(--gradient-bg);
     background-attachment: fixed;
     color: var(--color-foreground);
     min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: color-mix(in oklab, var(--color-primary) 25%, transparent); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 
 @utility gradient-primary {
   background-image: var(--gradient-primary);
@@ -239,3 +259,29 @@
   height: 100% !important;
 }
 
+
+/* === Sistema visual compartilhado === */
+@utility surface {
+  @apply rounded-2xl border bg-card shadow-card;
+}
+@utility surface-interactive {
+  @apply surface transition duration-200 hover:-translate-y-0.5 hover:border-primary/30;
+}
+@utility btn-base {
+  @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60;
+}
+@utility btn-primary {
+  @apply btn-base gradient-primary text-primary-foreground shadow-glow hover:brightness-105;
+}
+@utility btn-secondary {
+  @apply btn-base border bg-card font-medium hover:bg-accent;
+}
+@utility btn-ghost {
+  @apply btn-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground;
+}
+@utility field-input {
+  @apply h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-ring/40 disabled:bg-muted/50 disabled:text-muted-foreground;
+}
+@utility badge-soft {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary;
+}
