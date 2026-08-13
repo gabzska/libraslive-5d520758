@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Hand, Moon, Sun, Menu, X } from "lucide-react";
+import { Hand, Moon, Sun, Menu, X, UserRound, LogIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSession } from "@/hooks/use-session";
 
 const LINKS = [
   { to: "/", label: "Início" },
@@ -12,6 +13,7 @@ const LINKS = [
   { to: "/educacao", label: "Educação" },
   { to: "/hospital", label: "Hospital" },
 ] as const;
+
 
 export function AppNav() {
   const [dark, setDark] = useState(false);
