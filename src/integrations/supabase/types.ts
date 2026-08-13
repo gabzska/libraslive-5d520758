@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           autor_nome: string | null
           created_at: string
+          criado_por: string | null
           descricao: string | null
           disciplina: string | null
           id: string
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           autor_nome?: string | null
           created_at?: string
+          criado_por?: string | null
           descricao?: string | null
           disciplina?: string | null
           id?: string
@@ -46,6 +48,7 @@ export type Database = {
         Update: {
           autor_nome?: string | null
           created_at?: string
+          criado_por?: string | null
           descricao?: string | null
           disciplina?: string | null
           id?: string
@@ -384,6 +387,7 @@ export type Database = {
           streak_atual: number
           streak_recorde: number
           updated_at: string
+          user_id: string
           xp: number
         }
         Insert: {
@@ -395,6 +399,7 @@ export type Database = {
           streak_atual?: number
           streak_recorde?: number
           updated_at?: string
+          user_id: string
           xp?: number
         }
         Update: {
@@ -406,6 +411,7 @@ export type Database = {
           streak_atual?: number
           streak_recorde?: number
           updated_at?: string
+          user_id?: string
           xp?: number
         }
         Relationships: []
@@ -519,13 +525,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "moderador" | "usuario"
