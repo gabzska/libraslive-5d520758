@@ -348,9 +348,10 @@ function Field({
           aria-describedby={error ? `${id}-erro` : undefined}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          className={`h-11 w-full rounded-xl border bg-card px-3 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-ring/40 ${
-            icon ? "pl-9" : ""
-          } ${error ? "border-destructive focus:ring-destructive/30" : ""}`}
+          className={`field-input ${icon ? "pl-9" : ""} ${
+            error ? "border-destructive focus:ring-destructive/25" : ""
+          }`}
+
         />
       </div>
       {error && (
