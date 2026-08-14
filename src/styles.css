@@ -218,13 +218,14 @@
   @apply chat-bubble bg-primary text-primary-foreground rounded-br-md;
 }
 
-/* === Nav link underline === */
+/* === Nav link === */
 @utility nav-link {
-  @apply relative rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground;
+  @apply relative rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground;
 }
 @utility nav-link-active {
-  @apply text-primary bg-primary/10;
+  @apply bg-card text-foreground shadow-card;
 }
+
 
 /* === VLibras embutido: mantém uma única instância oficial fora do fluxo flutuante === */
 #vlibras-global-parking {
