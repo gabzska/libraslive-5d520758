@@ -173,7 +173,7 @@ function AuthPage() {
             <span className="font-display font-bold">LibrasLive AI</span>
           </Link>
 
-          <div className="mb-6 inline-flex rounded-full border bg-card p-1" role="tablist">
+          <div className="mb-7 inline-flex rounded-lg border bg-muted/60 p-1" role="tablist">
             {(["entrar", "criar"] as const).map((m) => (
               <button
                 key={m}
@@ -183,10 +183,11 @@ function AuthPage() {
                   setMode(m);
                   setTouched({});
                   setSucesso(false);
+                  setErroServidor(null);
                 }}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
                   mode === m
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-card text-foreground shadow-card"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -195,24 +196,35 @@ function AuthPage() {
             ))}
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
             {mode === "entrar" ? "Bem-vindo de volta" : "Criar sua conta"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "entrar"
               ? "Entre para acessar seu painel e suas configurações."
-              : "Leva menos de um minuto. Seus dados ficam protegidos."}
+              : "Leva menos de um minuto. Use uma senha forte e única."}
           </p>
 
+          {erroServidor && (
+            <div
+              role="alert"
+              className="mt-6 flex items-start gap-3 rounded-lg border border-destructive/35 bg-destructive/8 p-4 text-sm text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{erroServidor}</p>
+            </div>
+          )}
+
           {sucesso && (
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">
+            <div className="mt-6 flex items-start gap-3 rounded-lg border border-primary/25 bg-primary/8 p-4 text-sm">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <p>
-                Cadastro concluído. Se a confirmação por e-mail estiver ativa, verifique sua caixa
-                de entrada para ativar o acesso.
+                Cadastro concluído. Verifique sua caixa de entrada para confirmar o e-mail e
+                liberar o acesso.
               </p>
             </div>
           )}
+
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             {mode === "criar" && (
