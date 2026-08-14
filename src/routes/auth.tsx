@@ -63,19 +63,37 @@ function AuthPage() {
   }
   const invalid = Object.keys(errors).length > 0;
 
+  function mensagemDeErro(err: { message?: string; code?: string; status?: number }) {
+    const raw = (err.message ?? "").toLowerCase();
+    const code = err.code ?? "";
+    if (code === "weak_password" || raw.includes("pwned") || raw.includes("weak password"))
+      return "Essa senha é muito comum ou já apareceu em vazamentos. Escolha uma senha mais forte e única.";
+    if (raw.includes("already registered") || raw.includes("user already"))
+      return "Já existe uma conta com este e-mail. Faça login ou recupere o acesso.";
+    if (code === "email_address_invalid" || raw.includes("invalid email"))
+      return "Este endereço de e-mail não é aceito. Use um e-mail válido.";
+    if (raw.includes("rate limit") || err.status === 429)
+      return "Muitas tentativas em sequência. Aguarde alguns instantes e tente novamente.";
+    if (raw.includes("email not confirmed"))
+      return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.";
+    if (raw.includes("invalid login")) return "E-mail ou senha incorretos.";
+    return "Não foi possível concluir. Tente novamente em instantes.";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ nome: true, email: true, senha: true, confirma: true, password: true });
     if (invalid || loading) return;
     setLoading(true);
+    setErroServidor(null);
     try {
       if (mode === "entrar") {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (error) throw new Error("E-mail ou senha incorretos.");
-        toast.success("Bem-vinda de volta!");
+        if (error) throw error;
+        toast.success("Bem-vindo de volta!");
         navigate({ to: "/conta", replace: true });
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password: senha,
           options: {
@@ -83,24 +101,36 @@ function AuthPage() {
             data: { nome_completo: nome },
           },
         });
-        if (error) {
-          throw new Error(
-            error.message.toLowerCase().includes("registered")
-              ? "Já existe uma conta com este e-mail."
-              : "Não foi possível criar a conta. Tente novamente.",
-          );
+        if (error) throw error;
+
+        if (data.session) {
+          toast.success("Conta criada! Você já está conectado.");
+          navigate({ to: "/conta", replace: true });
+          return;
+        }
+
+        // Sem sessão imediata: tenta autenticar; se falhar, é confirmação por e-mail.
+        const { data: signIn } = await supabase.auth.signInWithPassword({
+          email,
+          password: senha,
+        });
+        if (signIn.session) {
+          toast.success("Conta criada! Você já está conectado.");
+          navigate({ to: "/conta", replace: true });
+          return;
         }
         setSucesso(true);
-        toast.success("Conta criada com sucesso!");
-        const { data } = await supabase.auth.getSession();
-        if (data.session) navigate({ to: "/conta", replace: true });
+        toast.success("Conta criada. Confirme seu e-mail para entrar.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Algo deu errado.");
+      const msg = mensagemDeErro(err as { message?: string; code?: string; status?: number });
+      setErroServidor(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   }
+
 
   const field = (key: string) => (touched[key] ? errors[key] : undefined);
 
