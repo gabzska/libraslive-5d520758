@@ -34,14 +34,12 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
-      <div className="space-y-2">
-        {eyebrow && (
-          <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium tracking-wide text-primary">
-            {eyebrow}
-          </span>
-        )}
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+    <header className="mb-8 flex flex-col gap-5 border-b border-border/70 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+      <div className="space-y-2.5">
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-[2.5rem] sm:leading-[1.1]">
+          {title}
+        </h1>
         {description && (
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {description}
@@ -52,6 +50,7 @@ export function PageHeader({
     </header>
   );
 }
+
 
 export function EmptyState({
   icon,
