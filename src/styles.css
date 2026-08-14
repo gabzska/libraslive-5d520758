@@ -277,26 +277,39 @@
 
 /* === Sistema visual compartilhado === */
 @utility surface {
-  @apply rounded-2xl border bg-card shadow-card;
+  @apply rounded-xl border bg-card shadow-card;
 }
 @utility surface-interactive {
-  @apply surface transition duration-200 hover:-translate-y-0.5 hover:border-primary/30;
+  @apply surface transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-pop;
+}
+@utility shadow-pop {
+  box-shadow: var(--shadow-pop);
+}
+@utility panel {
+  @apply rounded-xl border bg-card/70 backdrop-blur-sm;
 }
 @utility btn-base {
-  @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60;
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition active:scale-[0.985] disabled:pointer-events-none disabled:opacity-55;
 }
 @utility btn-primary {
-  @apply btn-base gradient-primary text-primary-foreground shadow-glow hover:brightness-105;
+  @apply btn-base bg-primary text-primary-foreground shadow-glow hover:bg-primary/90;
 }
 @utility btn-secondary {
-  @apply btn-base border bg-card font-medium hover:bg-accent;
+  @apply btn-base border bg-card font-medium hover:bg-accent hover:border-primary/25;
 }
 @utility btn-ghost {
   @apply btn-base font-medium text-muted-foreground hover:bg-accent hover:text-foreground;
 }
 @utility field-input {
-  @apply h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-ring/40 disabled:bg-muted/50 disabled:text-muted-foreground;
+  @apply h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:border-primary/45 focus:ring-4 focus:ring-ring/12 disabled:bg-muted/50 disabled:text-muted-foreground;
 }
 @utility badge-soft {
-  @apply inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary;
+  @apply inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-1 text-xs font-medium text-primary;
 }
+@utility eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
+}
+@utility section-title {
+  @apply font-display text-2xl font-bold tracking-tight sm:text-3xl;
+}
+
