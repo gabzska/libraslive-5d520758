@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Hand, Loader2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Hand, Loader2, Mail, Lock, User, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { signInInput, signUpInput } from "@/lib/users.schema";
@@ -36,6 +36,8 @@ function AuthPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+  const [erroServidor, setErroServidor] = useState<string | null>(null);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -63,19 +65,37 @@ function AuthPage() {
   }
   const invalid = Object.keys(errors).length > 0;
 
+  function mensagemDeErro(err: { message?: string; code?: string; status?: number }) {
+    const raw = (err.message ?? "").toLowerCase();
+    const code = err.code ?? "";
+    if (code === "weak_password" || raw.includes("pwned") || raw.includes("weak password"))
+      return "Essa senha é muito comum ou já apareceu em vazamentos. Escolha uma senha mais forte e única.";
+    if (raw.includes("already registered") || raw.includes("user already"))
+      return "Já existe uma conta com este e-mail. Faça login ou recupere o acesso.";
+    if (code === "email_address_invalid" || raw.includes("invalid email"))
+      return "Este endereço de e-mail não é aceito. Use um e-mail válido.";
+    if (raw.includes("rate limit") || err.status === 429)
+      return "Muitas tentativas em sequência. Aguarde alguns instantes e tente novamente.";
+    if (raw.includes("email not confirmed"))
+      return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.";
+    if (raw.includes("invalid login")) return "E-mail ou senha incorretos.";
+    return "Não foi possível concluir. Tente novamente em instantes.";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ nome: true, email: true, senha: true, confirma: true, password: true });
     if (invalid || loading) return;
     setLoading(true);
+    setErroServidor(null);
     try {
       if (mode === "entrar") {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (error) throw new Error("E-mail ou senha incorretos.");
-        toast.success("Bem-vinda de volta!");
+        if (error) throw error;
+        toast.success("Bem-vindo de volta!");
         navigate({ to: "/conta", replace: true });
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password: senha,
           options: {
@@ -83,24 +103,36 @@ function AuthPage() {
             data: { nome_completo: nome },
           },
         });
-        if (error) {
-          throw new Error(
-            error.message.toLowerCase().includes("registered")
-              ? "Já existe uma conta com este e-mail."
-              : "Não foi possível criar a conta. Tente novamente.",
-          );
+        if (error) throw error;
+
+        if (data.session) {
+          toast.success("Conta criada! Você já está conectado.");
+          navigate({ to: "/conta", replace: true });
+          return;
+        }
+
+        // Sem sessão imediata: tenta autenticar; se falhar, é confirmação por e-mail.
+        const { data: signIn } = await supabase.auth.signInWithPassword({
+          email,
+          password: senha,
+        });
+        if (signIn.session) {
+          toast.success("Conta criada! Você já está conectado.");
+          navigate({ to: "/conta", replace: true });
+          return;
         }
         setSucesso(true);
-        toast.success("Conta criada com sucesso!");
-        const { data } = await supabase.auth.getSession();
-        if (data.session) navigate({ to: "/conta", replace: true });
+        toast.success("Conta criada. Confirme seu e-mail para entrar.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Algo deu errado.");
+      const msg = mensagemDeErro(err as { message?: string; code?: string; status?: number });
+      setErroServidor(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   }
+
 
   const field = (key: string) => (touched[key] ? errors[key] : undefined);
 
@@ -141,7 +173,7 @@ function AuthPage() {
             <span className="font-display font-bold">LibrasLive AI</span>
           </Link>
 
-          <div className="mb-6 inline-flex rounded-full border bg-card p-1" role="tablist">
+          <div className="mb-7 inline-flex rounded-lg border bg-muted/60 p-1" role="tablist">
             {(["entrar", "criar"] as const).map((m) => (
               <button
                 key={m}
@@ -151,10 +183,11 @@ function AuthPage() {
                   setMode(m);
                   setTouched({});
                   setSucesso(false);
+                  setErroServidor(null);
                 }}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
                   mode === m
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-card text-foreground shadow-card"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -163,24 +196,35 @@ function AuthPage() {
             ))}
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
             {mode === "entrar" ? "Bem-vindo de volta" : "Criar sua conta"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "entrar"
               ? "Entre para acessar seu painel e suas configurações."
-              : "Leva menos de um minuto. Seus dados ficam protegidos."}
+              : "Leva menos de um minuto. Use uma senha forte e única."}
           </p>
 
+          {erroServidor && (
+            <div
+              role="alert"
+              className="mt-6 flex items-start gap-3 rounded-lg border border-destructive/35 bg-destructive/8 p-4 text-sm text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{erroServidor}</p>
+            </div>
+          )}
+
           {sucesso && (
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">
+            <div className="mt-6 flex items-start gap-3 rounded-lg border border-primary/25 bg-primary/8 p-4 text-sm">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <p>
-                Cadastro concluído. Se a confirmação por e-mail estiver ativa, verifique sua caixa
-                de entrada para ativar o acesso.
+                Cadastro concluído. Verifique sua caixa de entrada para confirmar o e-mail e
+                liberar o acesso.
               </p>
             </div>
           )}
+
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             {mode === "criar" && (
@@ -238,7 +282,7 @@ function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl gradient-primary text-sm font-semibold text-primary-foreground shadow-glow transition hover:brightness-105 active:scale-[0.99] disabled:opacity-60"
+              className="btn-primary w-full"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -304,9 +348,10 @@ function Field({
           aria-describedby={error ? `${id}-erro` : undefined}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          className={`h-11 w-full rounded-xl border bg-card px-3 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-ring/40 ${
-            icon ? "pl-9" : ""
-          } ${error ? "border-destructive focus:ring-destructive/30" : ""}`}
+          className={`field-input ${icon ? "pl-9" : ""} ${
+            error ? "border-destructive focus:ring-destructive/25" : ""
+          }`}
+
         />
       </div>
       {error && (
