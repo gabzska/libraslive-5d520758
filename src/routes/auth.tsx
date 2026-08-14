@@ -36,6 +36,8 @@ function AuthPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
+  const [erroServidor, setErroServidor] = useState<string | null>(null);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
