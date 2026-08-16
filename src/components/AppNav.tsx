@@ -44,8 +44,9 @@ export function AppNav() {
 
 
         <nav
-          className="mx-auto hidden items-center gap-0.5 rounded-xl border border-border/70 bg-muted/60 p-1 lg:flex"
+          className="mx-auto hidden items-center gap-0.5 rounded-2xl border border-border/60 bg-muted/50 p-1 shadow-sm backdrop-blur lg:flex"
           aria-label="Navegação principal"
+
         >
           {LINKS.map((l) => {
             const active = isActive(l.to);
