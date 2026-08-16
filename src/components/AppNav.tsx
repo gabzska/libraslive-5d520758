@@ -31,16 +31,17 @@ export function AppNav() {
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-lg gradient-primary shadow-glow">
+        <Link to="/" className="group flex shrink-0 items-center gap-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl gradient-primary shadow-glow transition-transform duration-300 group-hover:scale-105">
             <Hand className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display text-[15px] font-bold tracking-tight">
             LibrasLive <span className="text-primary">AI</span>
           </span>
         </Link>
+
 
         <nav
           className="mx-auto hidden items-center gap-0.5 rounded-xl border border-border/70 bg-muted/60 p-1 lg:flex"
