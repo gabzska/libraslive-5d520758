@@ -12,7 +12,7 @@ export function PageShell({
     <div className="min-h-screen">
       <AppNav />
       <main
-        className={`page-in mx-auto w-full px-4 py-8 sm:px-6 sm:py-12 ${
+        className={`page-in mx-auto w-full px-4 py-10 sm:px-6 sm:py-14 ${
           width === "wide" ? "max-w-7xl" : "max-w-6xl"
         }`}
       >
@@ -34,22 +34,29 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-8 flex flex-col gap-5 border-b border-border/70 pb-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
-      <div className="space-y-2.5">
-        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-[2.5rem] sm:leading-[1.1]">
-          {title}
-        </h1>
-        {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {description}
-          </p>
-        )}
+    <header className="reveal relative mb-10 overflow-hidden rounded-3xl border border-border/70 bg-card/60 p-6 shadow-card backdrop-blur-xl sm:mb-12 sm:p-8">
+      <div
+        className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/15 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div className="min-w-0 space-y-2.5">
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+          <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.08]">
+            {title}
+          </h1>
+          {description && (
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              {description}
+            </p>
+          )}
+        </div>
+        {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
     </header>
   );
 }
+
 
 
 export function EmptyState({
