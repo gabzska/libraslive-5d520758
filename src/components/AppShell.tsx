@@ -265,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="page-in min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <div className="page-in min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</div>
 
         <footer className="border-t border-border/60 bg-card/40 px-4 py-6 text-xs text-muted-foreground sm:px-6">
           <div className="section-shell grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">

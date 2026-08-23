@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { AppShell } from "@/components/AppShell";
-
 export function PageShell({
   children,
   width = "default",
@@ -9,11 +7,9 @@ export function PageShell({
   width?: "default" | "wide";
 }) {
   return (
-    <AppShell>
-      <div className={`mx-auto w-full ${width === "wide" ? "max-w-[1400px]" : "max-w-6xl"}`}>
-        {children}
-      </div>
-    </AppShell>
+    <main className={`mx-auto w-full ${width === "wide" ? "max-w-[1400px]" : "max-w-6xl"}`}>
+      {children}
+    </main>
   );
 }
 
