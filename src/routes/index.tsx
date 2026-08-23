@@ -129,7 +129,7 @@ function Index() {
             <span className="badge-soft">
               <Sparkles className="h-3.5 w-3.5" /> Ecossistema modular · Libras ↔ Português
             </span>
-            <h1 className="mt-5 text-balance font-display text-[2.1rem] font-extrabold leading-[1.05] tracking-tight sm:text-5xl">
+            <h1 className="mt-5 break-words text-balance font-display text-[1.75rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl">
               Um console único para <span className="text-gradient">acessibilidade em Libras</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
