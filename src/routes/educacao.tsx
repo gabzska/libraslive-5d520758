@@ -82,7 +82,7 @@ function EducacaoPage() {
   }
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <VLibrasWidget />
       <AppNav />
 

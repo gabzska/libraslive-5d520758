@@ -138,7 +138,7 @@ function TraduzirPage() {
   };
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6">

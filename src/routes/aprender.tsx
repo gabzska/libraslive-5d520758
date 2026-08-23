@@ -54,7 +54,7 @@ function AprenderPage() {
   const lp = useMemo(() => levelProgress(state.xp), [state.xp]);
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5">

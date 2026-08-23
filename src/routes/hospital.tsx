@@ -80,7 +80,7 @@ function HospitalPage() {
   const playerText = active || custom || finalText;
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">

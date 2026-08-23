@@ -52,7 +52,7 @@ function Biblioteca() {
   const withVideo = filtered.filter((s) => s.video_url).length;
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <div className="mx-auto max-w-6xl px-5 pt-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

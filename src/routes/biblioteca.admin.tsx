@@ -54,7 +54,7 @@ function AdminBiblioteca() {
   };
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <div className="mx-auto grid max-w-6xl gap-5 px-5 pt-8 pb-16 md:grid-cols-[320px_1fr]">
         <aside>

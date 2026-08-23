@@ -15,7 +15,7 @@ export const Route = createFileRoute("/educacao/$slug")({
     ],
   }),
   errorComponent: ({ error }) => (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <div className="mx-auto max-w-2xl px-5 py-10 text-center">
         <h1 className="text-2xl font-bold">Aula indisponível</h1>
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/educacao/$slug")({
     </main>
   ),
   notFoundComponent: () => (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <AppNav />
       <div className="mx-auto max-w-2xl px-5 py-10 text-center">
         <h1 className="text-2xl font-bold">Aula não encontrada</h1>
@@ -69,7 +69,7 @@ function AulaPage() {
 
   if (loading) {
     return (
-      <main className="min-h-dvh">
+      <main className="w-full">
         <AppNav />
         <div className="mx-auto max-w-3xl px-5 py-10 text-sm text-muted-foreground">Carregando aula…</div>
       </main>
@@ -84,7 +84,7 @@ function AulaPage() {
     .filter(Boolean);
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <VLibrasWidget />
       <AppNav />
 
