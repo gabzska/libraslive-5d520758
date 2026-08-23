@@ -1,7 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BookOpen, Share2, Check, Volume2 } from "lucide-react";
-import { AppNav } from "@/components/AppNav";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { getAulaBySlug, type Aula } from "@/services/education";
@@ -16,7 +15,6 @@ export const Route = createFileRoute("/educacao/$slug")({
   }),
   errorComponent: ({ error }) => (
     <main className="w-full">
-      <AppNav />
       <div className="mx-auto max-w-2xl px-5 py-10 text-center">
         <h1 className="text-2xl font-bold">Aula indisponível</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
@@ -26,7 +24,6 @@ export const Route = createFileRoute("/educacao/$slug")({
   ),
   notFoundComponent: () => (
     <main className="w-full">
-      <AppNav />
       <div className="mx-auto max-w-2xl px-5 py-10 text-center">
         <h1 className="text-2xl font-bold">Aula não encontrada</h1>
         <Link to="/educacao" className="mt-4 inline-block text-sm text-primary hover:underline">← Voltar ao catálogo</Link>
@@ -70,7 +67,6 @@ function AulaPage() {
   if (loading) {
     return (
       <main className="w-full">
-        <AppNav />
         <div className="mx-auto max-w-3xl px-5 py-10 text-sm text-muted-foreground">Carregando aula…</div>
       </main>
     );
@@ -86,7 +82,6 @@ function AulaPage() {
   return (
     <main className="w-full">
       <VLibrasWidget />
-      <AppNav />
 
       <section className="mx-auto max-w-6xl px-5 pt-6 pb-10">
         <Link to="/educacao" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">

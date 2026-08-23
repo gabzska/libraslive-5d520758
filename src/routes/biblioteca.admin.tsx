@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft, Upload, Image as ImageIcon, Video, Link as LinkIcon, Save, Check, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { AppNav } from "@/components/AppNav";
 import { SignVideo } from "@/components/SignVideo";
 import { supabase } from "@/integrations/supabase/client";
 import { listSinais, type Sinal } from "@/services/signal-library";
@@ -55,7 +54,6 @@ function AdminBiblioteca() {
 
   return (
     <main className="w-full">
-      <AppNav />
       <div className="mx-auto grid max-w-6xl gap-5 px-5 pt-8 pb-16 md:grid-cols-[320px_1fr]">
         <aside>
           <Link to="/biblioteca" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

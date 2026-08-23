@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ArrowLeft, Search, Library, Tag, Hand, Video, X, Volume2 } from "lucide-react";
-import { AppNav } from "@/components/AppNav";
 import { SignVideo } from "@/components/SignVideo";
 import { listCategorias, listSinais, type Sinal } from "@/services/signal-library";
 import { translateToVLibras } from "@/lib/vlibras";
@@ -53,7 +52,6 @@ function Biblioteca() {
 
   return (
     <main className="w-full">
-      <AppNav />
       <div className="mx-auto max-w-6xl px-5 pt-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Início
