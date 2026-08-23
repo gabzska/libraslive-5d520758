@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Plus, Search, GraduationCap, Loader2, Share2, Check } from "lucide-react";
-import { AppNav } from "@/components/AppNav";
 import { VLibrasWidget } from "@/components/VLibrasWidget";
 import { createAula, listAulas, type Aula } from "@/services/education";
 
@@ -82,9 +81,8 @@ function EducacaoPage() {
   }
 
   return (
-    <main className="min-h-dvh">
+    <main className="w-full">
       <VLibrasWidget />
-      <AppNav />
 
       <section className="mx-auto max-w-6xl px-5 pt-8 pb-6">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

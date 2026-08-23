@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { AppNav } from "@/components/AppNav";
 import { Lia3DStage } from "@/components/Lia3DStage";
 import { playSign, SIGN_LIBRARY } from "@/lib/lia-sign-library";
 import { playAnimation } from "@/lib/lia-animations";
@@ -33,8 +32,7 @@ const DEMO_SIGNS = ["OLÁ", "OBRIGADO", "AMOR", "LIBRAS", "AJUDA"] as const;
 function LiaPage() {
   const [bubble, setBubble] = useState<string | undefined>("Oi! Eu sou a Lia 👋");
   return (
-    <main className="min-h-dvh page-in">
-      <AppNav />
+    <main className="w-full">
 
       {/* HERO */}
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-10 pt-12 md:grid-cols-2 md:items-center md:pt-16">

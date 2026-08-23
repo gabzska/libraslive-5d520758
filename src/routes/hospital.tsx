@@ -7,7 +7,6 @@ import {
   AlertTriangle, IdCard, UserCheck, Soup, Thermometer, Clock, MapPin, Wind, Eye,
   UserPlus, User, Mic, MicOff,
 } from "lucide-react";
-import { AppNav } from "@/components/AppNav";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { speak } from "@/lib/tts";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -80,8 +79,7 @@ function HospitalPage() {
   const playerText = active || custom || finalText;
 
   return (
-    <main className="min-h-dvh">
-      <AppNav />
+    <main className="w-full">
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>

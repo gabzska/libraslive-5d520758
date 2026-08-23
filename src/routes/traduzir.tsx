@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Mic, MicOff, Send, Sparkles, Trash2, BookOpenText, Wand2, Check, Loader2 } from "lucide-react";
-import { AppNav } from "@/components/AppNav";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { supabase } from "@/integrations/supabase/client";
@@ -138,8 +137,7 @@ function TraduzirPage() {
   };
 
   return (
-    <main className="min-h-dvh">
-      <AppNav />
+    <main className="w-full">
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6">
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground">

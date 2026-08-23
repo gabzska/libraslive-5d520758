@@ -6,7 +6,6 @@ import {
   Medal, Crown, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AppNav } from "@/components/AppNav";
 import { AlphabetBanner } from "@/components/AlphabetBanner";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { SignVideo } from "@/components/SignVideo";
@@ -54,8 +53,7 @@ function AprenderPage() {
   const lp = useMemo(() => levelProgress(state.xp), [state.xp]);
 
   return (
-    <main className="min-h-dvh">
-      <AppNav />
+    <main className="w-full">
       <section className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
