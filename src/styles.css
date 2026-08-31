@@ -32,8 +32,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-surface: var(--surface-2);
-  --font-display: "Syne", "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 /* ================================================================
