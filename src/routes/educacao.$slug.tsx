@@ -17,7 +17,7 @@ export const Route = createFileRoute("/educacao/$slug")({
     <main className="w-full">
       <div className="mx-auto max-w-2xl px-5 py-10 text-center">
         <h1 className="text-2xl font-bold">Aula indisponível</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
         <Link to="/educacao" className="mt-4 inline-block text-sm text-primary hover:underline">← Voltar ao catálogo</Link>
       </div>
     </main>
