@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { useSession } from "@/hooks/use-session";
+import { usePlatformStatus } from "@/hooks/use-platform-status";
 
 type NavItem = {
   to: string;
@@ -166,6 +167,7 @@ function AccountCard({ collapsed }: { collapsed: boolean }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { online } = usePlatformStatus();
   const [dark, setDark] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -243,9 +245,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="min-w-0 justify-self-center">
-              <span className="badge-live hidden sm:inline-flex">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" aria-hidden />
-                IA de tradução ativa
+              <span className="badge-soft hidden sm:inline-flex" role="status">
+                <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+                {online === null ? "Verificando conexão" : online ? "Navegador conectado" : "Sem conexão"}
               </span>
             </div>
 

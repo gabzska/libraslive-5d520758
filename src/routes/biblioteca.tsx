@@ -5,6 +5,7 @@ import { ArrowLeft, Search, Library, Tag, Hand, Video, X, Volume2 } from "lucide
 import { SignVideo } from "@/components/SignVideo";
 import { listCategorias, listSinais, type Sinal } from "@/services/signal-library";
 import { translateToVLibras } from "@/lib/vlibras";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/biblioteca")({
   head: () => ({
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/biblioteca")({
       { name: "description", content: "Catálogo público de sinais em Libras com vídeos demonstrativos, imagens, descrição do movimento, sinônimos e busca por palavra ou categoria." },
       { property: "og:title", content: "Biblioteca de Sinais — LibrasLive" },
       { property: "og:description", content: "Assista aos vídeos dos sinais em Libras. Banco colaborativo, acessível e expansível." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Biblioteca,
@@ -30,6 +33,7 @@ function Biblioteca() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string | null>(null);
   const [selected, setSelected] = useState<Sinal | null>(null);
+  const [onlyVideo, setOnlyVideo] = useState(false);
 
   const categorias = useQuery({ queryKey: ["categorias"], queryFn: listCategorias });
   const sinais = useQuery({
@@ -39,14 +43,14 @@ function Biblioteca() {
 
   const items = sinais.data ?? [];
   const filtered = useMemo(() => {
-    if (!q) return items;
-    const needle = q.toLowerCase();
-    return items.filter((s) =>
-      s.palavra?.toLowerCase().includes(needle) ||
-      s.descricao?.toLowerCase().includes(needle) ||
-      (Array.isArray(s.sinonimos) && s.sinonimos.some((t) => t.toLowerCase().includes(needle)))
-    );
-  }, [items, q]);
+    const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const needle = normalize(q);
+    return items.filter((s) => !onlyVideo || !!s.video_url).filter((s) => !q ||
+      normalize(s.palavra ?? "").includes(needle) ||
+      normalize(s.descricao ?? "").includes(needle) ||
+      (Array.isArray(s.sinonimos) && s.sinonimos.some((t) => normalize(t).includes(needle)))
+    ).sort((a, b) => Number(!!b.video_url) - Number(!!a.video_url) || a.palavra.localeCompare(b.palavra, "pt-BR"));
+  }, [items, q, onlyVideo]);
 
   const withVideo = filtered.filter((s) => s.video_url).length;
 
@@ -69,8 +73,7 @@ function Biblioteca() {
               Aprenda Libras com <span className="text-primary">vídeos reais</span>
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Cada sinal traz vídeo demonstrativo, imagem da configuração de mão, descrição do movimento e sinônimos.
-              Uma única base alimenta a Biblioteca, o Quiz e o Alfabeto.
+              Sinais com vídeos demonstrativos aparecem primeiro. A disponibilidade de mídia e a origem variam por sinal.
             </p>
           </div>
           <div className="text-right text-xs text-muted-foreground">
@@ -102,6 +105,11 @@ function Biblioteca() {
             <CategoryChip key={c.id} active={cat === c.id} onClick={() => setCat(c.id)} label={c.nome} />
           ))}
         </div>
+        <label className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" checked={onlyVideo} onChange={(event) => setOnlyVideo(event.target.checked)} className="accent-primary" />
+          Apenas sinais com vídeo
+        </label>
+        {(sinais.isError || categorias.isError) && <div role="alert" className="mt-4 text-sm text-destructive">Não foi possível carregar os sinais ou categorias. <Button variant="outline" onClick={() => { void sinais.refetch(); void categorias.refetch(); }}>Tentar novamente</Button></div>}
 
         <section className="mt-8 pb-16">
           {sinais.isLoading ? (
@@ -153,6 +161,7 @@ function Biblioteca() {
                       {s.descricao && (
                         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.descricao}</p>
                       )}
+                      <p className="mt-2 break-words text-[11px] text-muted-foreground">Origem: {s.fonte || s.origem || "Não informada"}</p>
                       {Array.isArray(s.sinonimos) && s.sinonimos.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {s.sinonimos.slice(0, 3).map((t) => (
@@ -227,6 +236,8 @@ function SignModal({ sinal, onClose }: { sinal: Sinal; onClose: () => void }) {
 
         <div className="p-5">
           <h2 className="font-display text-2xl font-bold">{sinal.palavra}</h2>
+          <p className="mt-2 break-words text-xs text-muted-foreground">Origem: {sinal.fonte || sinal.origem || "Não informada"}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Revisão por pessoa fluente: não documentada neste catálogo.</p>
           {sinal.descricao && (
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{sinal.descricao}</p>
           )}

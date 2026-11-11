@@ -15,12 +15,18 @@ import { LiaInterpreter } from "@/components/LiaInterpreter";
 import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { playSign, type LiaState } from "@/lib/lia-sign-library";
 import { playAnimation } from "@/lib/lia-animations";
+import { Button } from "@/components/ui/button";
+import { assessTranslation, translationLabel } from "@/lib/translation-confidence";
 
 export const Route = createFileRoute("/conversa")({
   head: () => ({
     meta: [
       { title: "Modo Conversa — LibrasLive AI" },
       { name: "description", content: "Tradução bidirecional em tempo real com IA contextual entre voz e Libras." },
+      { property: "og:title", content: "Modo Conversa — LibrasLive AI" },
+      { property: "og:description", content: "Converse entre Libras e português com sugestões revisáveis." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Conversa,
@@ -33,6 +39,8 @@ interface Entry {
   glosses?: string[];
   confidence?: number;
   alternatives?: string[];
+  corrected?: boolean;
+  elapsedMs?: number;
   at: number;
 }
 
@@ -54,6 +62,8 @@ function Conversa() {
   const [transcript, setTranscript] = useState<Entry[]>([]);
   const [vlibrasText, setVlibrasText] = useState("");
   const [ptInput, setPtInput] = useState("");
+  const [mobileMode, setMobileMode] = useState<"sign" | "voice">("sign");
+  const [editingError, setEditingError] = useState("");
 
   // Gloss buffer + debounce
   const bufferRef = useRef<GlossEvent[]>([]);
@@ -65,6 +75,8 @@ function Conversa() {
   const flush = useCallback(async () => {
     const items = bufferRef.current;
     if (!items.length) return;
+    const started = performance.now();
+    const recognitionConfidence = Math.min(...items.map((item) => item.confidence));
     const rawGlosses = items.map((i) => i.gloss);
     // Agrupa letras consecutivas (A–Z) em [SOLETRADO:PALAVRA]
     const glosses: string[] = [];
@@ -83,7 +95,7 @@ function Conversa() {
     if (learned) {
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign", text: learned, glosses,
-        confidence: 1, at: Date.now(),
+        confidence: assessTranslation(recognitionConfidence, 1, true).confidence, corrected: true, elapsedMs: performance.now() - started, at: Date.now(),
       };
       setTranscript((t) => [entry, ...t].slice(0, 60));
       if (autoSpeak) speak(learned);
@@ -96,7 +108,7 @@ function Conversa() {
       const out = await reconstruct({ data: { glosses, context } });
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign", text: out.sentence, glosses,
-        confidence: out.confidence, alternatives: out.alternatives, at: Date.now(),
+        confidence: assessTranslation(recognitionConfidence, out.confidence).confidence, alternatives: out.alternatives, elapsedMs: performance.now() - started, at: Date.now(),
       };
       setTranscript((t) => [entry, ...t].slice(0, 60));
       // A Lia "fala" a frase reconstruída (sinal + animação de resposta)
@@ -104,14 +116,14 @@ function Conversa() {
       const firstGloss = (glosses[0] ?? "").toUpperCase();
       if (firstGloss === "OLÁ" || firstGloss === "OI") void playAnimation("Ola");
       else if (firstGloss.includes("TUDO") || firstGloss === "BEM") void playAnimation("TudoBem");
-      if (autoSpeak) speak(out.sentence);
+      if (autoSpeak && !assessTranslation(recognitionConfidence, out.confidence).needsReview) speak(out.sentence);
       // Ecoa a frase reconstruída no avatar VLibras (validação visual bidirecional).
       signOnVLibras(out.sentence);
     } catch (e: any) {
       const entry: Entry = {
         id: crypto.randomUUID(), from: "sign",
         text: glosses.join(" ").toLowerCase() + "  (IA indisponível: " + (e?.message ?? "erro") + ")",
-        glosses, confidence: 0.2, at: Date.now(),
+        glosses, confidence: 0, elapsedMs: performance.now() - started, at: Date.now(),
       };
       setTranscript((t) => [entry, ...t].slice(0, 60));
     } finally {
@@ -163,11 +175,13 @@ function Conversa() {
   // edição inline para aprendizado contínuo
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const startEdit = (e: Entry) => { setEditingId(e.id); setDraft(e.text); };
+  const startEdit = (e: Entry) => { setEditingError(""); setEditingId(e.id); setDraft(e.text); };
   const confirmEdit = (e: Entry) => {
     if (!draft.trim()) return;
-    if (e.glosses?.length) saveCorrection(e.glosses.join("|"), draft.trim());
-    setTranscript((t) => t.map((x) => (x.id === e.id ? { ...x, text: draft.trim(), confidence: 1 } : x)));
+    try {
+      if (e.glosses?.length) saveCorrection(e.glosses.join("|"), draft.trim());
+    } catch { setEditingError("Não foi possível salvar neste navegador. Tente novamente."); return; }
+    setTranscript((t) => t.map((x) => (x.id === e.id ? { ...x, text: draft.trim(), corrected: true } : x)));
     setEditingId(null);
   };
 
@@ -191,39 +205,23 @@ function Conversa() {
         </span>
       </header>
 
-      <section className="mx-auto max-w-7xl px-5 pb-8">
-        <div className="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-8">
-          <LiaInterpreter
-            size="lg"
-            state={(translating ? "thinking" : voice.listening ? "listening" : sign.active ? "listening" : "idle") as LiaState}
-            showBubble={false}
-          />
-          <div className="text-center md:text-left">
-            <h1 className="text-balance text-3xl font-bold sm:text-4xl">
-              Libras → <span className="bg-gradient-to-r from-[oklch(0.62_0.21_295)] to-[oklch(0.72_0.18_280)] bg-clip-text text-transparent">Português natural</span>
-            </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:mx-0">
-              A Lia captura mãos, expressões e postura. Os sinais formam glosas; uma IA contextual
-              reconstrói a frase em português brasileiro com gramática e pontuação.
-            </p>
-          </div>
+      <section className="mx-auto max-w-7xl px-1 pb-4 sm:px-5">
+        <h1 className="font-display text-2xl font-bold">Conversa</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Reconhecimento experimental. Confirme o sentido antes de usar a tradução em situações importantes.</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 md:hidden" aria-label="Direção da conversa">
+          <Button variant={mobileMode === "sign" ? "default" : "outline"} className="h-11" aria-pressed={mobileMode === "sign"} onClick={() => { voice.stop(); setMobileMode("sign"); }}><Camera /> Libras → Português</Button>
+          <Button variant={mobileMode === "voice" ? "default" : "outline"} className="h-11" aria-pressed={mobileMode === "voice"} onClick={() => { sign.stop(); setMobileMode("voice"); }}><Mic /> Português → Libras</Button>
         </div>
+        <details className="mt-3">
+          <summary className="cursor-pointer py-2 text-sm text-primary">Alfabeto manual</summary>
+          <AlphabetBanner activeLetter={sign.current && /^[A-Z]$/.test(sign.current.gloss) ? sign.current.gloss : null} spelledWord={buffer.map(g => g.gloss).filter(g => /^[A-Z]$/.test(g)).join("")} />
+        </details>
       </section>
 
-      {(() => {
-        const activeLetter =
-          sign.current && /^[A-Z]$/.test(sign.current.gloss) ? sign.current.gloss : null;
-        const spelledWord = buffer
-          .map((g) => g.gloss)
-          .filter((g) => /^[A-Z]$/.test(g))
-          .join("");
-        return <AlphabetBanner activeLetter={activeLetter} spelledWord={spelledWord} />;
-      })()}
-
-      <section className="mx-auto grid max-w-7xl gap-5 px-5 pb-10 md:grid-cols-2">
+      <section className="mx-auto grid max-w-7xl gap-5 px-1 pb-10 sm:px-5 md:grid-cols-2">
 
         {/* SIGN → TEXT */}
-        <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-5 shadow-card backdrop-blur">
+        <div className={`relative overflow-hidden rounded-3xl border bg-card/80 p-4 shadow-card backdrop-blur sm:p-5 ${mobileMode === "sign" ? "" : "hidden md:block"}`}>
           <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div>
@@ -307,20 +305,20 @@ function Conversa() {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {!sign.active ? (
-              <button onClick={sign.start} disabled={sign.loading}
+              <Button onClick={sign.start} disabled={sign.loading}
                 className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-60">
                 <Camera className="h-4 w-4" /> {sign.loading ? "Carregando…" : "Ativar câmera"}
-              </button>
+              </Button>
             ) : (
-              <button onClick={sign.stop}
+              <Button onClick={sign.stop}
                 className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground transition hover:brightness-110">
                 <CameraOff className="h-4 w-4" /> Parar câmera
-              </button>
+              </Button>
             )}
-            <button onClick={() => void flush()} disabled={!buffer.length || translating}
+            <Button onClick={() => void flush()} disabled={!buffer.length || translating}
               className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm transition hover:bg-accent disabled:opacity-50">
               <Brain className="h-4 w-4 text-primary" /> Traduzir agora
-            </button>
+            </Button>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm">
               <input type="checkbox" checked={autoSpeak} onChange={(e) => setAutoSpeak(e.target.checked)} className="accent-[oklch(0.62_0.21_295)]" />
               <Volume2 className="h-4 w-4 text-primary" /> Falar tradução
@@ -333,12 +331,12 @@ function Conversa() {
 
           <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Activity className="h-3 w-3 text-primary" />
-            MediaPipe Holistic (mãos + face + pose) · LLM gemini-3-flash · Latência alvo ≤ 1s
+            Tempo total disponível após cada tradução; inclui reconhecimento e processamento.
           </p>
         </div>
 
         {/* VOICE → SIGN */}
-        <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-5 shadow-card backdrop-blur">
+        <div className={`relative overflow-hidden rounded-3xl border bg-card/80 p-4 shadow-card backdrop-blur sm:p-5 ${mobileMode === "voice" ? "" : "hidden md:block"}`}>
           <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div>
@@ -377,28 +375,28 @@ function Conversa() {
               className="mt-2 w-full resize-none rounded-xl border bg-card/80 p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               rows={3}
             />
-            <button
+            <Button
               onClick={sendPortugueseToVLibras}
               disabled={!ptInput.trim()}
               className="mt-3 inline-flex items-center gap-2 rounded-full gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> Enviar para VLibras
-            </button>
+            </Button>
           </div>
 
           {voice.error && <p className="mt-3 text-sm text-destructive">Erro: {voice.error}</p>}
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {!voice.listening ? (
-              <button onClick={voice.start} disabled={!voice.supported}
+              <Button onClick={voice.start} disabled={!voice.supported}
                 className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-50">
                 <Mic className="h-4 w-4" /> Iniciar microfone
-              </button>
+              </Button>
             ) : (
-              <button onClick={voice.stop}
+              <Button onClick={voice.stop}
                 className="inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground transition hover:brightness-110">
                 <MicOff className="h-4 w-4" /> Parar microfone
-              </button>
+              </Button>
             )}
           </div>
 
@@ -411,7 +409,7 @@ function Conversa() {
         </div>
       </section>
 
-      {/* CONFIANÇA EM DESTAQUE — última tradução de Libras */}
+      {/* Última sugestão, com estimativa e revisão pessoal separadas. */}
       {(() => {
         const last = transcript.find((e) => e.from === "sign");
         if (!last) return null;
@@ -424,10 +422,14 @@ function Conversa() {
               <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
               <div className="relative grid items-center gap-6 sm:grid-cols-[1fr_auto]">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-primary">Tradução identificada</p>
+                  <p className="text-xs font-medium uppercase tracking-wider text-primary">{translationLabel(last.confidence ?? 0, last.corrected)}</p>
                   <p className="mt-2 break-words font-display text-2xl font-semibold leading-tight sm:text-3xl">
                     "{last.text}"
                   </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <Button variant="outline" className="h-11" onClick={() => { startEdit(last); document.getElementById("conversation-history")?.scrollIntoView({ block: "start" }); }}><Pencil /> Corrigir tradução</Button>
+                    {typeof last.elapsedMs === "number" && <span className="text-xs text-muted-foreground">Processamento: {(last.elapsedMs / 1000).toFixed(2)} s</span>}
+                  </div>
                   {last.glosses?.length ? (
                     <p className="mt-2 text-xs text-muted-foreground">Glosas: {last.glosses.join(" · ")}</p>
                   ) : null}
@@ -437,7 +439,7 @@ function Conversa() {
                     <span className={`font-display text-5xl font-bold tabular-nums sm:text-6xl ${tone}`}>{pct}</span>
                     <span className={`text-xl font-semibold ${tone}`}>%</span>
                   </div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Confiança</p>
+                  <p className="text-[11px] text-muted-foreground">Estimativa, não garantia</p>
                   <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
                     <div className={`h-full ${bar} transition-all`} style={{ width: `${pct}%` }} />
                   </div>
@@ -449,19 +451,19 @@ function Conversa() {
       })()}
 
       {/* TRANSCRIPT */}
-      <section className="mx-auto max-w-7xl px-5 pb-16">
+      <section id="conversation-history" className="mx-auto max-w-7xl scroll-mt-20 px-1 pb-16 sm:px-5">
 
         <div className="rounded-3xl border bg-card/70 p-6 shadow-card backdrop-blur">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-primary">Diálogo</p>
               <h2 className="mt-1 font-display text-xl font-semibold">Histórico — com aprendizado contínuo</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Corrija uma frase e a IA passará a usar sua correção sempre que a mesma sequência de sinais voltar.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Correções pessoais ficam apenas neste navegador; não treinam automaticamente um modelo global.</p>
             </div>
             {transcript.length > 0 && (
-              <button onClick={() => setTranscript([])} className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-accent">
+              <Button onClick={() => setTranscript([])} className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-accent">
                 Limpar
-              </button>
+              </Button>
             )}
           </div>
 
@@ -513,7 +515,7 @@ function Conversa() {
                                   : "bg-destructive/15 text-destructive"
                             }`}
                           >
-                            {Math.round(e.confidence * 100)}%
+                            {translationLabel(e.confidence, e.corrected)} · {Math.round(e.confidence * 100)}% estimado
                           </span>
                         )}
                         <span className="text-[10px] text-muted-foreground">
@@ -528,17 +530,20 @@ function Conversa() {
                               value={draft}
                               onChange={(ev) => setDraft(ev.target.value)}
                               className="min-w-[180px] flex-1 rounded-lg border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                              aria-label="Corrigir frase em português"
                               autoFocus
                             />
-                            <button
+                            <Button
                               onClick={() => confirmEdit(e)}
                               className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs text-primary-foreground"
                             >
                               <Check className="h-3.5 w-3.5" /> Salvar
-                            </button>
+                            </Button>
+                            <Button variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                            {editingError && <p role="alert" className="w-full text-xs text-destructive">{editingError}</p>}
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap">{e.text}</p>
+                          <p className="break-words whitespace-pre-wrap">{e.text}</p>
                         )}
                       </div>
 
@@ -550,23 +555,23 @@ function Conversa() {
                             </span>
                           ) : null}
                           {e.alternatives?.map((a, i) => (
-                            <button
+                            <Button
                               key={i}
                               onClick={() => {
-                                setTranscript((t) => t.map((x) => (x.id === e.id ? { ...x, text: a } : x)));
+                                setTranscript((t) => t.map((x) => (x.id === e.id ? { ...x, text: a, corrected: true } : x)));
                                 if (e.glosses?.length) saveCorrection(e.glosses.join("|"), a);
                                 if (autoSpeak) speak(a);
                               }}
                               className="rounded-full border bg-card px-2 py-0.5 text-[10px] text-muted-foreground transition hover:bg-accent"
                             >
                               {a}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       )}
 
                       <div className={`mt-1 flex gap-1 px-1 ${isLia ? "" : "flex-row-reverse"}`}>
-                        <button
+                        <Button
                           onClick={() => (isLia ? speak(e.text) : translateToVLibras(e.text))}
                           className="rounded-full border bg-card/70 p-1.5 transition hover:bg-accent"
                           aria-label="Reproduzir"
@@ -576,15 +581,15 @@ function Conversa() {
                           ) : (
                             <Hand className="h-3 w-3 text-primary" />
                           )}
-                        </button>
+                        </Button>
                         {isLia && (
-                          <button
+                          <Button
                             onClick={() => startEdit(e)}
                             className="rounded-full border bg-card/70 p-1.5 transition hover:bg-accent"
                             aria-label="Editar tradução"
                           >
                             <Pencil className="h-3 w-3 text-primary" />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>

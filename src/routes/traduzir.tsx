@@ -7,6 +7,8 @@ import { VLibrasPlayer } from "@/components/VLibrasPlayer";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { supabase } from "@/integrations/supabase/client";
 import { translateToGlosses, submitCorrection } from "@/lib/libras.functions";
+import { Button } from "@/components/ui/button";
+import { translationLabel } from "@/lib/translation-confidence";
 
 export const Route = createFileRoute("/traduzir")({
   head: () => ({
@@ -15,6 +17,8 @@ export const Route = createFileRoute("/traduzir")({
       { name: "description", content: "Digite ou fale em português e veja a tradução automática para Libras com avatar VLibras e soletração do alfabeto manual quando necessário." },
       { property: "og:title", content: "Traduzir Português para Libras — LibrasLive AI" },
       { property: "og:description", content: "Tradução automática Português → Libras com avatar VLibras." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: TraduzirPage,
@@ -39,6 +43,9 @@ function TraduzirPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [editingCorrection, setEditingCorrection] = useState(false);
   const [correctionText, setCorrectionText] = useState("");
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const [correctionStatus, setCorrectionStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const translateFn = useServerFn(translateToGlosses);
@@ -87,12 +94,15 @@ function TraduzirPage() {
 
   const submit = async () => {
     const clean = text.trim();
-    if (!clean) return;
+    if (!clean || translating) return;
+    const started = performance.now();
+    setElapsedMs(null);
     setTranslating(true);
     setAiError(null);
     setAiResult(null);
     setEditingCorrection(false);
     setCorrectionStatus("idle");
+    setCorrectionError(null);
     setHistory((h) => [{ id: crypto.randomUUID(), text: clean, at: Date.now() }, ...h].slice(0, 20));
     try {
       const out = await translateFn({ data: { text: clean } });
@@ -110,12 +120,14 @@ function TraduzirPage() {
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "Falha na tradução");
     } finally {
+      setElapsedMs(performance.now() - started);
       setTranslating(false);
     }
   };
 
   const saveCorrection = async () => {
     if (!aiResult || !correctionText.trim()) return;
+    setCorrectionError(null);
     setCorrectionStatus("saving");
     try {
       await correctionFn({
@@ -132,20 +144,21 @@ function TraduzirPage() {
       // Reflete correção localmente
       setAiResult({ ...aiResult, glosses: correctionText.trim().toUpperCase().split(/\s+/) });
     } catch {
+      setCorrectionError("Não foi possível enviar a correção. Tente novamente.");
       setCorrectionStatus("idle");
     }
   };
 
   return (
     <main className="w-full">
-      <section className="mx-auto max-w-6xl px-4 py-8">
+      <section className="mx-auto max-w-6xl px-1 py-2 sm:px-4 sm:py-8">
         <div className="mb-6">
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" /> Português → Libras
           </span>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Digite ou fale, o avatar sinaliza</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Use o microfone ou escreva a frase. Palavras que não têm sinal próprio são soletradas pelo alfabeto manual automaticamente.
+            Tradução automática sugerida. Confirme o sentido em situações importantes.
           </p>
         </div>
 
@@ -165,35 +178,35 @@ function TraduzirPage() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {!listening ? (
-                  <button
+                  <Button
                     onClick={start}
                     disabled={!supported}
                     className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-medium hover:bg-accent disabled:opacity-50"
                   >
                     <Mic className="h-4 w-4 text-primary" /> Ditar
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     onClick={stop}
                     className="inline-flex items-center gap-2 rounded-full bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground"
                   >
                     <MicOff className="h-4 w-4" /> Parar ditado
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   onClick={submit}
-                  disabled={!text.trim()}
+                  disabled={!text.trim() || translating}
                   className="inline-flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow disabled:opacity-50"
                 >
-                  <Send className="h-4 w-4" /> Traduzir e salvar
-                </button>
-                <button
+                  {translating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {translating ? "Traduzindo…" : "Traduzir"}
+                </Button>
+                <Button
                   onClick={() => setText("")}
                   disabled={!text}
                   className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" /> Limpar
-                </button>
+                </Button>
               </div>
 
               {tokens.length > 0 && (
@@ -246,17 +259,17 @@ function TraduzirPage() {
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>Intenção: <span className="text-foreground">{aiResult.intent}</span></span>
-                        <span>Confiança: <span className={aiResult.confidence >= 0.8 ? "text-emerald-500" : aiResult.confidence >= 0.5 ? "text-amber-500" : "text-destructive"}>{Math.round(aiResult.confidence * 100)}%</span></span>
+                        <span>{translationLabel(aiResult.confidence, correctionStatus === "saved")} · estimativa: <span className={aiResult.confidence >= 0.8 ? "text-emerald-500" : aiResult.confidence >= 0.5 ? "text-amber-500" : "text-destructive"}>{Math.round(aiResult.confidence * 100)}%</span></span>
                         {aiResult.notes && <span className="w-full italic">{aiResult.notes}</span>}
                       </div>
 
                       {!editingCorrection ? (
-                        <button
+                        <Button
                           onClick={() => { setEditingCorrection(true); setCorrectionStatus("idle"); }}
                           className="text-xs font-medium text-primary hover:underline"
                         >
-                          Não ficou certo? Ensinar a Lia →
-                        </button>
+                          Corrigir tradução
+                        </Button>
                       ) : (
                         <div className="rounded-xl border bg-card p-3">
                           <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -269,51 +282,54 @@ function TraduzirPage() {
                             placeholder="EU QUERER ÁGUA POR-FAVOR"
                           />
                           <div className="mt-2 flex gap-2">
-                            <button
+                            <Button
                               onClick={saveCorrection}
                               disabled={correctionStatus === "saving" || !correctionText.trim()}
                               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
                             >
                               {correctionStatus === "saving" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                               Salvar correção
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => setEditingCorrection(false)}
                               className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
                             >
                               Cancelar
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       )}
                       {correctionStatus === "saved" && (
-                        <p className="text-xs text-emerald-500">✓ Obrigado! A Lia vai aprender com sua correção.</p>
+                        <p className="text-xs text-emerald-500">✓ Correção enviada e aplicada a esta tradução. Isso não confirma treinamento do modelo.</p>
                       )}
                     </div>
                   )}
                 </div>
               )}
 
+              {correctionError && <p role="alert" className="mt-3 text-sm text-destructive">{correctionError}</p>}
+              {elapsedMs !== null && <p className="mt-3 text-xs text-muted-foreground">Processamento: {(elapsedMs / 1000).toFixed(2)} s</p>}
               {finalText && (
                 <p className="mt-3 text-xs text-muted-foreground">Última fala reconhecida: "{finalText}"</p>
               )}
             </div>
 
-            {history.length > 0 && (
+            {history.length > 0 && <Button variant="ghost" className="mt-3 h-11" aria-expanded={showHistory} onClick={() => setShowHistory(v => !v)}>Últimas traduções ({history.length})</Button>}
+            {showHistory && history.length > 0 && (
               <div className="mt-5 rounded-3xl border bg-card/70 p-5 shadow-card">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium uppercase tracking-wider text-primary">Últimas traduções</p>
-                  <button onClick={() => setHistory([])} className="text-xs text-muted-foreground hover:text-foreground">Limpar</button>
+                  <Button onClick={() => setHistory([])} className="text-xs text-muted-foreground hover:text-foreground">Limpar</Button>
                 </div>
                 <ul className="mt-3 space-y-2">
                   {history.map((h) => (
                     <li key={h.id}>
-                      <button
+                      <Button
                         onClick={() => setText(h.text)}
                         className="w-full rounded-2xl border bg-background/60 p-3 text-left text-sm hover:bg-accent"
                       >
                         {h.text}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -321,7 +337,7 @@ function TraduzirPage() {
             )}
           </div>
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 md:sticky md:top-20 md:self-start">
             <VLibrasPlayer text={text} hint="O avatar oficial do VLibras fica embutido neste painel e sinaliza a frase digitada automaticamente." />
           </div>
         </div>

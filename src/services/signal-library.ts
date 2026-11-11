@@ -19,10 +19,11 @@ export interface Sinal {
   relacionados: string[];
   confianca: number;
   origem: string;
+  fonte: string | null;
   aprovado: boolean;
 }
 
-const COLS = "id,palavra,slug,categoria_id,descricao,video_url,imagem_url,animacao_url,sinonimos,relacionados,confianca,origem,aprovado";
+const COLS = "id,palavra,slug,categoria_id,descricao,video_url,imagem_url,animacao_url,sinonimos,relacionados,confianca,origem,fonte,aprovado";
 
 export async function listCategorias() {
   const { data, error } = await supabase
@@ -36,7 +37,6 @@ export async function listCategorias() {
 export async function listSinais(opts: { categoria?: string; q?: string; limit?: number } = {}): Promise<Sinal[]> {
   let query = supabase.from("sinais").select(COLS).eq("aprovado", true);
   if (opts.categoria) query = query.eq("categoria_id", opts.categoria);
-  if (opts.q) query = query.ilike("palavra", `%${opts.q}%`);
   query = query.order("palavra").limit(opts.limit ?? 200);
   const { data, error } = await query;
   if (error) throw error;

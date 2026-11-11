@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Hand, Loader2, Volume2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { attachVLibrasTo, parkVLibras, translateToVLibras } from "@/lib/vlibras";
 
 interface Props {
@@ -62,7 +63,7 @@ export function VLibrasPlayer({ text, autoPlay = true, hint }: Props) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-6 shadow-card backdrop-blur">
+    <div className="relative overflow-hidden rounded-3xl border bg-card/80 p-3 shadow-card sm:p-6 backdrop-blur">
       <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-primary/25 to-transparent blur-2xl" />
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
@@ -79,7 +80,7 @@ export function VLibrasPlayer({ text, autoPlay = true, hint }: Props) {
         <div className="mt-5 overflow-hidden rounded-2xl border bg-background/80">
           <div
             ref={hostRef}
-            className="libraslive-vlibras-host relative min-h-[470px] bg-card"
+            className="libraslive-vlibras-host relative h-[360px] bg-card sm:h-[470px]"
             aria-label="Painel integrado do avatar VLibras"
           >
             {status !== "ready" && (
@@ -98,13 +99,13 @@ export function VLibrasPlayer({ text, autoPlay = true, hint }: Props) {
           <p className="border-t bg-background/60 px-4 py-3 text-center text-sm text-muted-foreground">
             {hint ?? "O texto enviado é reproduzido automaticamente neste painel, sem abrir janelas ou abas externas."}
           </p>
-          <button
+          <Button
             onClick={play}
             disabled={!text.trim()}
             className="mx-auto my-4 flex items-center gap-2 rounded-full gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-glow transition hover:brightness-110 disabled:opacity-50"
           >
             <Volume2 className="h-4 w-4" /> Sinalizar agora
-          </button>
+          </Button>
         </div>
       </div>
     </div>
